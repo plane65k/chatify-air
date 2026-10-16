@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" href="https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title id="pageTitle">Chatify Air</title>
+<style>
+  /* ============================================================
+     INTRO / THEME CSS — VERBATIM from Chatify (unchanged)
+     ============================================================ */
+  body.theme-transitioning * {
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  body {
+    background: linear-gradient(135deg, var(--background-color) 0%, var(--secondary-background) 100%);
+    transition: background 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  [data-theme="dark"] body {
+    background: linear-gradient(135deg, var(--background-color) 0%, var(--secondary-background) 100%);
+  }
+  #chatApp, header, #chat, footer, .message, .admin-modal, .profile-modal-content, #pinBox {
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  html, body {
+    height: 100%; margin: 0; overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+    background: #f5f5f5;
+  }
+  .white-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: white; z-index: 1000;
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .intro {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: center; gap: 20px; z-index: 1001;
+  }
+  .circle {
+    width: 140px; height: 140px; background: #34a853; border-radius: 50%;
+    transform: scale(3);
+    animation: circleRise 1.02s ease-in-out forwards, moveRight 0.24s ease-out 0.91s forwards;
+  }
+  @keyframes circleRise { 0% { transform: scale(7.75); } 100% { transform: translateX(30%) scale(1); } }
+  @keyframes moveRight { 0% { transform: translateX(10%) scale(1); } 100% { transform: translateX(0px) scale(1); } }
+  .text {
+    font-size: 52px; font-weight: 700; color: #222; letter-spacing: 2px; opacity: 0;
+    animation: textReveal 0.4s ease-out 0.7s forwards;
+    transition: color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+  }
+  [data-theme="dark"] .text { color: #949494; }
+  @keyframes textReveal { 0% { opacity: 0; transform: translateX(-100%); } 100% { opacity: 1; transform: translateX(0); } }
+  .flash { animation: flashLogo 1s ease-in-out forwards; }
+  @keyframes flashLogo { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+</style>
+
+<style>
+/* ============================================================
+   MAIN THEME + LAYOUT CSS — VERBATIM from Chatify (unchanged)
+   ============================================================ */
+:root {
+  --background-color: #f5f5f5;
+  --text-color: #333333;
+  --card-background: #ffffff;
+  --button-background: #4caf50;
+  --button-text: #ffffff;
+  --secondary-background: #fafafa;
+  --border-color: #ccc;
+  --shadow-color: rgba(0,0,0,0.2);
+  --message-my-background: #4caf50;
+  --message-my-text: #ffffff;
+  --message-other-background: #e0e0e0;
+  --message-other-text: #000000;
+  --overlay-background: rgba(0,0,0,0.4);
+  --transition-time: 2s;
+}
+[data-theme="dark"] {
+  --background-color: #1a1a1a;
+  --text-color: #ffffff;
+  --card-background: #2c2c2c;
+  --button-background: #45a049;
+  --button-text: #ffffff;
+  --secondary-background: #333333;
+  --border-color: #555555;
+  --shadow-color: rgba(255,255,255,0.1);
+  --message-my-background: #45a049;
+  --message-my-text: #ffffff;
+  --message-other-background: #4a4a4a;
+  --message-other-text: #ffffff;
+  --overlay-background: rgba(255,255,255,0.2);
+}
+*{box-sizing:border-box}
+html,body{
+  height:100%; margin:0;
+  font-family:Roboto,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  background:var(--background-color); color:var(--text-color);
+  transition:background-color var(--transition-time) ease,color var(--transition-time) ease;
+  display: flex; flex-direction: column;
+}
+#pinOverlay {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--background-color);
+  z-index: 100; padding: 60px 20px;
+}
+#pinBox {
+  display: flex; background: var(--card-background);
+  border-radius: 28px; width: 92%; max-width: 780px;
+  min-height: 400px; max-height: 85vh;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+  overflow: hidden; border: 1px solid var(--border-color);
+}
+.pin-left {
+  flex: 1 1 50%; padding: 32px;
+  display: flex; flex-direction: column; justify-content: center;
+  background: var(--card-background); min-width: 260px;
+}
+.pin-left .logo-area { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.pin-left .logo-area img { height: 36px; width: auto; }
+.pin-left .logo-area h1 { font-size: 24px; font-weight: 700; color: var(--text-color); margin: 0; }
+.pin-left .welcome-text { font-size: 13px; color: var(--text-color); opacity: 0.7; margin-bottom: 16px; }
+.pin-left .input-group { margin-bottom: 10px; }
+.pin-left .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-color); margin-bottom: 3px; opacity: 0.8; }
+.pin-left .input-group input {
+  width: 100%; padding: 10px 14px; border-radius: 12px;
+  border: 2px solid var(--border-color);
+  background: var(--secondary-background); color: var(--text-color);
+  font-size: 14px; transition: border-color 0.25s, box-shadow 0.25s;
+  box-sizing: border-box;
+}
+.pin-left .input-group input:focus { outline: none; border-color: var(--button-background); box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12); }
+#pinBtn {
+  width: 100%; padding: 12px; border-radius: 30px;
+  font-size: 15px; font-weight: 600; margin-top: 4px;
+  background: var(--button-background); color: var(--button-text);
+  border: none; cursor: pointer; transition: all 0.25s;
+  letter-spacing: 0.3px;
+}
+#pinBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3); }
+#pinBtn:disabled { opacity: 0.6; cursor: wait; }
+.pin-right {
+  flex: 1 1 50%; padding: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  background: linear-gradient(145deg, #2e7d32 0%, #1b5e20 50%, #0d3b0f 100%);
+  color: white; text-align: center; position: relative; overflow: hidden;
+  min-width: 220px; min-height: 300px; border-radius: 0 28px 28px 0;
+}
+.pin-right::before {
+  content: ''; position: absolute; inset: 0;
+  background: url('https://i.pinimg.com/736x/97/5c/51/975c519ab0bec63a622623ae129681ef.jpg') center/cover;
+  opacity: 0.2; z-index: 0; border-radius: inherit;
+}
+.pin-right .brand-content { position: relative; z-index: 1; padding: 28px 24px; max-width: 320px; }
+.pin-right h2 { font-size: 1.8rem; font-weight: 800; margin: 0 0 6px 0; letter-spacing: -0.5px; text-shadow: 0 2px 20px rgba(0,0,0,0.2); }
+.pin-right .tagline { font-size: 0.9rem; font-weight: 400; opacity: 0.85; margin: 0 0 14px 0; letter-spacing: 0.3px; }
+.pin-right .brand-footer { position: relative; z-index: 1; margin-top: 14px; font-size: 10px; opacity: 0.4; letter-spacing: 0.5px; }
+@media (max-width: 768px) {
+  #pinBox { flex-direction: column; width: 95%; max-height: 95vh; border-radius: 24px; min-height: auto; max-width: 100%; }
+  .pin-left { padding: 28px 20px; min-width: unset; flex: none; order: 2; }
+  .pin-right { flex: none; min-height: 180px; padding: 24px 16px; border-radius: 24px 24px 0 0; order: 1; min-width: unset; }
+  .pin-right h2 { font-size: 1.5rem; }
+  .pin-left .logo-area h1 { font-size: 20px; }
+  .pin-left .logo-area img { height: 30px; }
+}
+@media (max-width: 480px) {
+  #pinOverlay { padding: 30px 10px; }
+  .pin-right h2 { font-size: 1.3rem; }
+  .pin-left { padding: 20px 14px; }
+  #pinBox { border-radius: 20px; }
+}
+#pinBox input {
+  padding: 10px; border-radius: 12px;
+  border: 1px solid var(--border-color); width: 100%;
+  margin-bottom: 8px; background: transparent; color: var(--text-color);
+}
+#pinBox button {
+  background: var(--button-background); color: var(--button-text);
+  padding: 10px; border-radius: 12px; border: 0; width: 100%; cursor: pointer; font-weight: 700;
+}
+.transition-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--button-background); z-index: 10000;
+  transform: scale(0); border-radius: 50%;
+  transform-origin: center; pointer-events: none;
+}
+.transition-overlay.expand { animation: expandButton 2.8s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+@keyframes expandButton {
+  0% { transform: scale(0); border-radius: 50%; }
+  50% { transform: scale(3); border-radius: 30%; }
+  100% { transform: scale(10); border-radius: 0; }
+}
+#chatApp { display: none; width: 100%; height: 100vh; background: transparent !important; overflow: hidden; flex-direction: column; }
+#chat {
+  flex: 1; overflow: auto; padding: 18px;
+  display: flex; flex-direction: column; gap: 12px;
+  background: transparent !important;
+  height: calc(100vh - 140px); overflow-y: auto;
+}
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 24px;
+  background: var(--button-background); color: var(--button-text);
+  font-weight: 700; flex-shrink: 0; border-radius: 50px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  position: absolute; z-index: 10;
+  width: 95%; max-width: 1200px;
+  transition: width 0.25s ease, max-width 0.1s ease;
+  margin: 0; top: 13px; left: 50%; transform: translateX(-50%);
+}
+header.scrolled {
+  transition: width 0.3s ease, max-width 0.3s ease;
+  width: 50%; max-width: 150px; height: 50px;
+}
+header.scrolled .header-actions { display: none !important; }
+header.scrolled #serverPanel { display: none !important; }
+body { overflow: hidden; }
+.main { overflow-y: auto; height: 100vh; }
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.button-clear { background: none; border: none; color: var(--button-text); cursor: pointer; font-weight: 600; font-family: inherit; font-size: 13px; }
+#loading { display: none; padding: 18px; align-items: center; justify-content: center; flex-shrink: 0; }
+.loader {
+  width: 36px; height: 36px;
+  background-image: url("https://res.cloudinary.com/dceqg5cky/image/upload/v1767927041/176792680500277049_fny3u3.png");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+  animation: spin 3s linear infinite; height: 180px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.message {
+  max-width: 72%; padding: 12px 14px; border-radius: 20px;
+  font-size: 14px; position: relative; word-break: break-word;
+  transition: transform .18s, opacity .18s;
+  display: flex; align-items: center;
+}
+.myMessage {
+  align-self: flex-end; background: var(--message-my-background);
+  color: var(--message-my-text); border-bottom-right-radius: 6px;
+}
+.otherMessage {
+  align-self: flex-start; background: var(--message-other-background);
+  color: var(--message-other-text); border-bottom-left-radius: 6px;
+}
+.timestamp {
+  display: block; font-size: 10px; color: var(--text-color);
+  margin-top: 0; text-align: right; opacity: 0.7; width: 100.67%;
+}
+.options { position: absolute; top: 6px; right: 8px; cursor: pointer; }
+.options-menu {
+  position: absolute; top: 26px; right: 8px;
+  background: var(--card-background); border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 6px; display: none;
+  box-shadow: 0 8px 20px var(--shadow-color); z-index: 10;
+}
+.options-menu button {
+  display: block; background: none; border: none; padding: 6px 10px;
+  width: 100%; text-align: left; cursor: pointer;
+  color: var(--text-color); border-radius: 6px; font-family: inherit;
+}
+.options-menu button:hover { background: var(--secondary-background); }
+footer {
+  display: flex; padding: 5px;
+  border-top: 1px solid var(--border-color);
+  background: var(--card-background); flex-shrink: 0;
+  border-radius: 50px; margin-bottom: 5px; margin-left: 5px; margin-right: 5px;
+}
+footer input {
+  flex: 1; padding: 12px; border-radius: 24px;
+  border: 1px solid var(--border-color); margin-right: 10px;
+  background: transparent; color: var(--text-color); font-family: inherit;
+}
+footer button {
+  width: 48px; height: 48px; border-radius: 50%;
+  border: none; background: var(--button-background);
+  color: var(--button-text); font-size: 18px; cursor: pointer;
+}
+#serverPanel {
+  background: transparent !important; border: none !important;
+  padding: 0 !important; margin: 0 15px !important;
+  display: inline-flex !important; gap: 10px !important; align-items: center !important;
+}
+#serverSelect, #createServerBtn {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 20px !important;
+  padding: 6px 12px !important;
+  font-family: inherit;
+}
+#serverSelect:hover, #createServerBtn:hover { background: rgba(255, 255, 255, 0.3) !important; }
+#serverSelect {
+  padding: 5px 10px; border-radius: 89px;
+  border: 1px solid var(--border-color);
+  background: var(--card-background); color: var(--text-color);
+  align-items: left; cursor: pointer; max-width: 260px; font-family: inherit;
+}
+#serverSelect option { background: var(--card-background); color: var(--text-color); padding: 8px; }
+#serverSelect:focus { outline: 2px solid var(--button-background); outline-offset: 2px; }
+.gif-btn {
+  background: rgba(69, 190, 74, 0.8); border: none; color: white;
+  font-size: 1.5rem; padding: 0.8rem; width: 3rem; height: 3rem;
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s ease; margin-right: 8px;
+}
+.gif-btn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(69, 190, 74, 0.7); }
+.gif-keyboard {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  width: 90%; max-width: 500px; min-width: 280px;
+  height: 400px; min-height: 300px; max-height: 70vh;
+  background: var(--card-background);
+  border-radius: 20px; border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px var(--shadow-color);
+  display: none; flex-direction: column; z-index: 200; overflow: hidden; resize: both;
+}
+.gif-keyboard-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--border-color);
+  background: var(--card-background); cursor: move; user-select: none; flex-shrink: 0;
+}
+.gif-keyboard-header h4 { margin: 0; font-size: 16px; color: var(--text-color); }
+.close-gif-btn {
+  background: none; border: none; font-size: 24px; cursor: pointer;
+  color: var(--text-color); padding: 0 8px;
+}
+.gif-search-input {
+  width: calc(100% - 24px); margin: 12px; padding: 8px 12px;
+  border-radius: 25px; border: 1px solid var(--border-color);
+  background: var(--secondary-background); color: var(--text-color);
+  font-size: 14px; box-sizing: border-box; font-family: inherit;
+}
+.gif-search-input:focus { outline: none; border-color: var(--button-background); }
+.gif-results {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; align-items: flex-start; min-height: 200px;
+}
+.gif-result-item {
+  width: calc(33.333% - 8px); min-width: 80px; aspect-ratio: 1;
+  cursor: pointer; border-radius: 12px; overflow: hidden; transition: transform 0.2s;
+}
+.gif-result-item:hover { transform: scale(1.05); }
+.gif-result-item img { width: 100%; height: 100%; object-fit: cover; }
+.loading-gifs { text-align: center; padding: 40px; color: var(--text-color); }
+.profile-modal {
+  position: fixed; inset: 0; display: none;
+  align-items: center; justify-content: center;
+  background: var(--overlay-background); z-index: 110;
+}
+.profile-modal-content {
+  background: var(--card-background); padding: 20px;
+  border-radius: 16px; width: 320px;
+  box-shadow: 0 8px 30px var(--shadow-color); text-align: center;
+  max-width: 600px; max-height: 85vh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.profile-preview { width: 80px; height: 80px; border-radius: 50%; margin: 10px auto; display: block; }
+.profile-input-container { margin: 10px 0; }
+.profile-input-container input {
+  width: 100%; padding: 10px; border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: transparent; color: var(--text-color); font-family: inherit;
+}
+.profile-modal-actions { display: flex; gap: 10px; justify-content: center; }
+.profile-modal-actions button {
+  padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-family: inherit;
+}
+.profile-modal-actions button:first-child { background: #ccc; color: #333; }
+.profile-modal-actions button:last-child { background: var(--button-background); color: var(--button-text); }
+#usersList {
+  flex: 1; overflow-y: auto !important;
+  padding-right: 8px !important; max-height: 65vh !important;
+  min-height: 200px !important; scroll-behavior: smooth; margin-top: 12px;
+}
+#usersList::-webkit-scrollbar { width: 6px; }
+#usersList::-webkit-scrollbar-track { background: var(--secondary-background); border-radius: 10px; }
+#usersList::-webkit-scrollbar-thumb { background: var(--button-background); border-radius: 10px; }
+.notify-banner {
+  position: fixed; left: 50%; transform: translateX(-50%); top: 18px;
+  background: linear-gradient(90deg, var(--button-background), #2e7d32);
+  color: var(--button-text); padding: 12px 18px; border-radius: 999px;
+  box-shadow: 0 12px 30px var(--shadow-color); z-index: 200;
+  display: none; animation: bannerIn .35s ease; font-family: inherit;
+}
+@keyframes bannerIn {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+a { color: #0a66c2; text-decoration: underline; }
+.reactions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.reaction {
+  background: var(--secondary-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px; padding: 2px 6px; font-size: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.myMessage .reaction {
+  color: var(--message-my-text);
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.reaction:hover { background: var(--button-background); color: var(--button-text); }
+.emoji-picker-btn {
+  position: absolute; bottom: 0px; right: 4px;
+  cursor: pointer; opacity: 0; transition: opacity 0.2s; font-size: 15px;
+}
+.message:hover .emoji-picker-btn { opacity: 1; }
+.emoji-picker {
+  position: absolute; top: 30px; right: 0;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 12px; padding: 8px; display: none; z-index: 10;
+  box-shadow: 0 4px 12px var(--shadow-color); width: 180px;
+  grid-template-columns: repeat(6, 1fr);
+}
+.emoji-option {
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 6px; font-size: 18px; padding: 4px;
+}
+.emoji-option:hover { background: var(--secondary-background); }
+.image-btn {
+  background: rgba(69, 190, 74, 0.8); border: none; color: white;
+  font-size: 1.5rem; padding: 0.8rem; width: 3rem; height: 3rem;
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s ease; margin-right: 8px; position: relative;
+}
+.image-btn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(69, 190, 74, 0.7); }
+.image-btn:disabled { opacity: 0.6; transform: none !important; box-shadow: none !important; cursor: not-allowed; }
+
+/* ============================================================
+   REPLY FEATURE (restored) — same visual language as Chatify
+   ============================================================ */
+.reply-btn {
+  background: none;
+  border: none;
+  color: var(--button-background);
+  cursor: pointer;
+  font-size: 11px;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.myMessage .reply-btn {
+  color: rgba(255, 255, 255, 0.9);
+}
+.reply-btn:hover {
+  background: var(--secondary-background);
+}
+.myMessage .reply-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Quoted preview rendered at top of a reply bubble */
+.reply-preview {
+  background: rgba(0, 0, 0, 0.08);
+  border-left: 3px solid var(--button-background);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.myMessage .reply-preview {
+  background: rgba(255, 255, 255, 0.18);
+  border-left-color: rgba(255, 255, 255, 0.65);
+}
+.reply-preview strong {
+  font-weight: 600;
+  opacity: 0.9;
+}
+.reply-preview span {
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Reply-in-progress indicator near the footer input */
+.reply-indicator {
+  position: absolute;
+  bottom: 72px;
+  left: 10px;
+  right: 10px;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--button-background);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-color);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  z-index: 9;
+}
+.reply-indicator span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.reply-indicator button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.6;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.ghost-message { opacity: 0.55 !important; animation: ghostPulse 1.4s ease-in-out infinite; pointer-events: none; }
+.ghost-message .timestamp::after { content: ' · sending'; font-style: italic; opacity: 0.8; }
+@keyframes ghostPulse { 0%,100% { opacity: 0.55; } 50% { opacity: 0.35; } }
+.message.sending { opacity: 0.6; }
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px; text-align: center; opacity: 0.6; gap: 12px;
+}
+.empty-state .icon { font-size: 48px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     INTRO
+     ============================================================ -->
+<div class="transition-overlay" id="transitionOverlay"></div>
+<div class="white-overlay" id="whiteOverlay"></div>
+<div class="intro" id="intro">
+  <div class="circle"></div>
+  <div class="text" id="chatifyText">Chatify Air</div>
+</div>
+
+<!-- ============================================================
+     PIN OVERLAY
+     ============================================================ -->
+<div id="pinOverlay" aria-hidden="false">
+  <div id="pinBox">
+    <div class="pin-left">
+      <div class="logo-area">
+        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png" alt="Chatify Air Logo" />
+        <h1>Chatify Air</h1>
+      </div>
+      <p class="welcome-text">Welcome! Connect to your BlueBubbles Server to continue.</p>
+
+      <div class="input-group">
+        <label>Server URL</label>
+        <input id="usernameInput" placeholder="https://your-server.ngrok.io" autocomplete="off" spellcheck="false" />
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input id="pinInput" placeholder="BlueBubbles server password" type="password" autocomplete="current-password" />
+      </div>
+
+      <div style="margin: 10px 0; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 10px; max-height: 60px; overflow-y: auto; background: var(--secondary-background); font-size: 9px; color: var(--text-color); opacity: 0.7;">
+        <strong style="font-size:10px;">Terms:</strong> By clicking Enter Chat you agree to the Chatify Air terms of use. Chatify Air connects to your self-hosted BlueBubbles server and provides no warranty, as-is. You are responsible for the content sent through your server.
+      </div>
+
+      <button id="pinBtn">Enter Chat</button>
+    </div>
+
+    <div class="pin-right">
+      <div class="brand-content">
+        <h2>iMessage, anywhere</h2>
+        <p class="tagline">Powered by BlueBubbles + Chatify Air</p>
+        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1785015423/download_2_zo0yb2.png"
+             alt="Chatify Air" style="width: 299px; height: auto; margin-top: 10px; margin-left: -15px;" />
+      </div>
+      <div class="brand-footer">© 2026 Chatify Air • v2.0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="chatApp" aria-hidden="true">
+  <header id="mainHeader">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img src="https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png" alt="Chatify Air Logo" style="height: 30px; width: auto;" />
+      <span>Chatify Air</span>
+    </div>
+
+    <div id="serverPanel">
+      <select id="serverSelect">
+        <option value="">Loading chats...</option>
+      </select>
+      <button id="createServerBtn">New Chat</button>
+    </div>
+
+    <div class="header-actions">
+      <button id="profileBtn" class="button-clear" title="Set profile picture">Profile</button>
+      <button id="toggleThemeBtn" class="button-clear" title="Toggle theme">Toggle Theme</button>
+      <button id="backgroundBtn" class="button-clear" title="Customize chat background">Background</button>
+      <button id="usersBtn" class="button-clear" title="Contacts">Contacts</button>
+      <button id="signoutBtn" class="button-clear" title="Sign out" style="color:salmon">Sign out</button>
+    </div>
+  </header>
+
+  <div id="loading"><div class="loader"></div></div>
+  <div id="chat" role="log" aria-live="polite"></div>
+
+  <!-- Reply-in-progress indicator (only visible while composing a reply) -->
+  <div class="reply-indicator" id="replyIndicator">
+    <span id="replyIndicatorText">Replying…</span>
+    <button id="cancelReplyBtn" title="Cancel reply">✕</button>
+  </div>
+
+  <footer>
+    <input id="messageInput" placeholder="Type a message..." style="flex: 1; padding: 10px 12px; font-size: 14px; min-height: 40px; max-height: 60px;" />
+    <button id="gifBtn" class="gif-btn">🎬</button>
+    <button id="imageBtn" class="image-btn">🖼️</button>
+    <button id="sendBtn">➤</button>
+  </footer>
+
+<style>
+  #sendBtn {
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(69, 190, 74, 0.8); border: none; color: white;
+    font-size: 1.5rem; padding: 0.8rem;
+    width: 3rem; height: 3rem; border-radius: 50%;
+    cursor: pointer; box-shadow: 0 4px 15px rgba(69, 190, 74, 0.2);
+    transition: all 0.25s ease;
+  }
+  #sendBtn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(69, 190, 74, 0.7); }
+  #sendBtn:active { transform: scale(0.94); box-shadow: 0 2px 10px rgba(69, 190, 74, 0.4); }
+</style>
+</div>
+
+<!-- Contacts Modal -->
+<div id="usersModal" class="profile-modal">
+  <div class="profile-modal-content" style="max-width: 500px; max-height: 80vh;">
+    <h3>👥 Contacts</h3>
+    <div style="padding: 8px 0;">
+      <input id="userSearchInput" type="text" placeholder="🔍 Search contacts..." autocomplete="off"
+             style="width: 100%; padding: 10px 14px; border-radius: 30px; border: 2px solid var(--border-color); background: var(--secondary-background); color: var(--text-color); font-size: 14px; box-sizing: border-box; outline: none; font-family: inherit;" />
+    </div>
+    <div id="usersList">
+      <div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 30px;">Loading contacts...</div>
+    </div>
+    <div class="profile-modal-actions" style="margin-top: 15px;">
+      <button id="closeUsersBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Picture Modal -->
+<div id="profileModal" class="profile-modal">
+  <div class="profile-modal-content">
+    <h3>Set Profile Picture</h3>
+    <img id="profilePreview" class="profile-preview" src="https://via.placeholder.com/80" alt="Profile preview" />
+    <div class="profile-input-container">
+      <input type="text" id="profileUrlInput" placeholder="Enter image URL" />
+    </div>
+    <div class="profile-modal-actions">
+      <button id="cancelProfileBtn">Cancel</button>
+      <button id="saveProfileBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIF Keyboard -->
+<div id="gifKeyboard" class="gif-keyboard">
+  <div class="gif-keyboard-header">
+    <h4>🎬 GIFs</h4>
+    <button class="close-gif-btn" id="closeGifBtn">&times;</button>
+  </div>
+  <input type="text" id="gifSearchInput" class="gif-search-input" placeholder="Search GIFs..." />
+  <div id="gifResults" class="gif-results">
+    <div class="loading-gifs">🔍 Search for GIFs above</div>
+  </div>
+</div>
+
+<div id="notifyBanner" class="notify-banner"></div>
+
+<script>
+/* ============================================================
+   CHATIFY AIR — BlueBubbles backend
+   Changes in this revision:
+     1. Messages show contact FIRST + LAST name (via findContactName)
+        instead of the raw phone number / address.
+     2. Read/Delivered indicator is text-only (no checkmarks) and
+        flips automatically to "Read" once dateRead appears on the
+        message returned by BlueBubbles.
+     3. Reply button restored; replies send selectedMessageGuid +
+        partIndex to BlueBubbles so they're real iMessage replies,
+        and rendered with a quoted preview.
+   Nothing else in the UI has been touched.
+   ============================================================ */
+
+/* ---------- Intro animation ---------- */
+(function playIntro() {
+  const intro = document.getElementById('intro');
+  const whiteOverlay = document.getElementById('whiteOverlay');
+  const chatifyText = document.getElementById('chatifyText');
+  if (!intro || !whiteOverlay) return;
+
+  const currentTheme = localStorage.getItem('theme') ||
+    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const overlayColor = currentTheme === 'dark' ? '#333333' : 'white';
+
+  intro.style.display = 'flex';
+  whiteOverlay.style.display = 'block';
+  whiteOverlay.style.backgroundColor = overlayColor;
+
+  setTimeout(() => {
+    chatifyText.classList.add('flash');
+    setTimeout(() => {
+      chatifyText.classList.remove('flash');
+      intro.style.display = 'none';
+      whiteOverlay.style.display = 'none';
+    }, 1000);
+  }, 1000);
+})();
+
+/* ---------- Theme ---------- */
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+document.documentElement.setAttribute('data-theme', savedTheme || (prefersDark ? 'dark' : 'light'));
+
+document.getElementById('toggleThemeBtn').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.body.classList.add('theme-transitioning');
+  setTimeout(() => {
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  }, 10);
+  setTimeout(() => document.body.classList.remove('theme-transitioning'), 800);
+});
+
+/* ---------- Global State ---------- */
+let BB_BASE_URL = '';
+let BB_PASSWORD = '';
+let bbConnected = false;
+let currentUser = { username: 'You', isAdmin: false };
+let isAdmin = false;
+
+let currentServer = null;
+let messages = [];
+let displayed = new Set();
+let bannedUsers = new Set();
+let userProfiles = {};
+let isTabActive = !document.hidden;
+let chats = [];
+let contacts = [];
+
+const localReactions = {};
+
+const notifiedGuids = new Set();
+const lastSeenGuids = new Map();
+let notificationPermissionGranted = false;
+
+const pendingSends = [];
+
+// Currently-armed reply target (guid of the message being replied to)
+let replyToGuid = null;
+
+const pinOverlay = document.getElementById('pinOverlay');
+const pinBtn = document.getElementById('pinBtn');
+const usernameInput = document.getElementById('usernameInput');
+const pinInput = document.getElementById('pinInput');
+const chatApp = document.getElementById('chatApp');
+const chatDiv = document.getElementById('chat');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const notifyBanner = document.getElementById('notifyBanner');
+const loadingDiv = document.getElementById('loading');
+const serverSelect = document.getElementById('serverSelect');
+const replyIndicator = document.getElementById('replyIndicator');
+const replyIndicatorText = document.getElementById('replyIndicatorText');
+const cancelReplyBtn = document.getElementById('cancelReplyBtn');
+
+document.addEventListener('visibilitychange', () => { isTabActive = !document.hidden; });
+window.addEventListener('focus', () => { isTabActive = true; });
+window.addEventListener('blur', () => { isTabActive = false; });
+
+/* ---------- Utilities ---------- */
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+}
+
+function formatTs(ts) {
+  if (!ts) return '';
+  let d;
+  if (typeof ts === 'number') d = new Date(ts < 1e12 ? ts * 1000 : ts);
+  else d = new Date(ts);
+  if (isNaN(d)) return '';
+  return d.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
+}
+
+function showNotifyBanner(text, duration = 5000) {
+  const header = document.querySelector('header');
+  if (!notifyBanner || !header) return;
+  notifyBanner.textContent = text;
+  notifyBanner.style.display = 'block';
+  const rect = header.getBoundingClientRect();
+  notifyBanner.style.top = (rect.bottom + 8) + 'px';
+  notifyBanner.style.left = '50%';
+  clearTimeout(notifyBanner._timer);
+  notifyBanner._timer = setTimeout(() => { notifyBanner.style.display = 'none'; }, duration);
+}
+
+/* ---------- BlueBubbles fetch helpers ---------- */
+function bbUrl(path) {
+  const base = BB_BASE_URL.replace(/\/+$/, '');
+  const sep = path.includes('?') ? '&' : '?';
+  return `${base}/api/v1${path}${sep}password=${encodeURIComponent(BB_PASSWORD)}`;
+}
+
+async function bbFetch(path, opts = {}) {
+  const resp = await fetch(bbUrl(path), {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  });
+  const json = await resp.json().catch(() => ({}));
+  if (!resp.ok || (json.status && json.status >= 400)) {
+    throw new Error(json?.error?.error || json?.message || `HTTP ${resp.status}`);
+  }
+  return json;
+}
+
+/* ---------- Ping sound ---------- */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  }
+  return audioCtx;
+}
+function playPingSound() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1046.5, now);
+    osc.frequency.exponentialRampToValueAtTime(1568, now + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(880, now + 0.28);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.28, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+    osc.start(now); osc.stop(now + 0.4);
+  } catch (e) {}
+}
+
+/* ---------- Notification permission ---------- */
+async function ensureNotificationPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') { notificationPermissionGranted = true; return true; }
+  if (Notification.permission === 'denied') return false;
+  try {
+    const p = await Notification.requestPermission();
+    notificationPermissionGranted = p === 'granted';
+  } catch (e) {}
+  return notificationPermissionGranted;
+}
+
+function fireBrowserNotification(title, body, tag) {
+  if (!notificationPermissionGranted) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: 'https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png',
+      tag: tag || 'chatify-air',
+      silent: true
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => { try { n.close(); } catch (e) {} }, 8000);
+  } catch (e) {}
+}
+
+function markNotified(guid) {
+  if (!guid) return false;
+  if (notifiedGuids.has(guid)) return false;
+  notifiedGuids.add(guid);
+  if (notifiedGuids.size > 1200) {
+    const arr = Array.from(notifiedGuids);
+    notifiedGuids.clear();
+    arr.slice(-300).forEach(g => notifiedGuids.add(g));
+  }
+  return true;
+}
+
+/* ============================================================
+   CONTACT NAME RESOLUTION
+   - Uses the loaded /contact list to find First + Last name
+   - Falls back to displayName, then the raw address
+   ============================================================ */
+function findContactName(address) {
+  if (!address) return '';
+  for (const c of contacts) {
+    const matchesPhone = c.phoneNumbers && c.phoneNumbers.some(p => p.address === address);
+    const matchesEmail = c.emails && c.emails.some(e => e.address === address);
+    if (matchesPhone || matchesEmail) {
+      // Prefer firstName + lastName (iMessage style)
+      if (c.firstName && c.lastName) return `${c.firstName} ${c.lastName}`;
+      if (c.firstName) return c.firstName;
+      if (c.lastName) return c.lastName;
+      if (c.displayName) return c.displayName;
+      return address;
+    }
+  }
+  return address;
+}
+
+function getMessageSenderName(msg) {
+  if (!msg) return 'Unknown';
+  if (msg.isFromMe) return 'You';
+  const addr = (msg.handle && msg.handle.address) || '';
+  const name = findContactName(addr);
+  return name || addr || 'Unknown';
+}
+
+/* ---------- Login ---------- */
+pinBtn.addEventListener('click', async () => {
+  const url = (usernameInput.value || '').trim();
+  const pass = (pinInput.value || '').trim();
+  if (!url || !pass) { alert('Please enter both the Server URL and Password'); return; }
+
+  BB_BASE_URL = url.replace(/\/+$/, '');
+  BB_PASSWORD = pass;
+
+  pinBtn.textContent = 'Connecting…';
+  pinBtn.disabled = true;
+
+  try { await ensureNotificationPermission(); } catch (e) {}
+  try { getAudioCtx(); } catch (e) {}
+
+  try {
+    await bbFetch('/ping');
+
+    let serverName = 'BlueBubbles';
+    try {
+      const info = await bbFetch('/server/info');
+      if (info.data && info.data.os_version) serverName = `BlueBubbles (macOS ${info.data.os_version})`;
+    } catch (e) {}
+
+    localStorage.setItem('bb_url', BB_BASE_URL);
+    localStorage.setItem('bb_pass', BB_PASSWORD);
+
+    bbConnected = true;
+    showNotifyBanner(`✅ Connected to ${serverName}`);
+
+    const transitionOverlay = document.getElementById('transitionOverlay');
+    const buttonRect = pinBtn.getBoundingClientRect();
+    transitionOverlay.style.left = (buttonRect.left + buttonRect.width / 2) + 'px';
+    transitionOverlay.style.top = (buttonRect.top + buttonRect.height / 2) + 'px';
+    transitionOverlay.classList.add('expand');
+
+    setTimeout(async () => {
+      pinOverlay.style.display = 'none';
+      chatApp.style.display = 'flex';
+
+      // Load contacts FIRST so name lookups work in the initial render
+      await loadContacts();
+      await loadChats();
+      startPolling();
+
+      setTimeout(() => {
+        transitionOverlay.classList.remove('expand');
+        transitionOverlay.style.transform = 'scale(0)';
+      }, 100);
+    }, 1000);
+  } catch (err) {
+    console.error('Connection failed:', err);
+    alert('Could not connect to BlueBubbles: ' + err.message +
+          '\n\nMake sure the URL is correct, the password is right, and the REST API is enabled over HTTPS.');
+  } finally {
+    pinBtn.textContent = 'Enter Chat';
+    pinBtn.disabled = false;
+  }
+});
+
+(function autoFill() {
+  const u = localStorage.getItem('bb_url');
+  const p = localStorage.getItem('bb_pass');
+  if (u) usernameInput.value = u;
+  if (p) pinInput.value = p;
+})();
+
+/* ---------- Contacts (loaded early so names resolve everywhere) ---------- */
+async function loadContacts() {
+  try {
+    const res = await bbFetch('/contact');
+    contacts = res.data || [];
+    console.log(`📇 Loaded ${contacts.length} contacts`);
+  } catch (e) {
+    console.warn('Contacts load failed:', e.message);
+    contacts = [];
+  }
+}
+
+/* ---------- Chats ---------- */
+async function loadChats() {
+  loadingDiv.style.display = 'flex';
+  try {
+    const res = await bbFetch('/chat/query', {
+      method: 'POST',
+      body: JSON.stringify({
+        limit: 200, offset: 0,
+        with: ['lastMessage', 'participants'],
+        sort: 'lastmessage'
+      })
+    });
+    const newChats = res.data || [];
+    const isFirst = chats.length === 0;
+
+    if (isFirst) {
+      for (const c of newChats) {
+        if (c.lastMessage?.guid) {
+          lastSeenGuids.set(c.guid, c.lastMessage.guid);
+          notifiedGuids.add(c.lastMessage.guid);
+        }
+      }
+    }
+    chats = newChats;
+    updateServerSelect();
+
+    if (isFirst && chats.length > 0 && !currentServer) {
+      const first = chats[0];
+      serverSelect.value = first.guid;
+      await openChat(first.guid, getChatName(first));
+    }
+  } catch (e) {
+    console.error('loadChats failed:', e);
+    showNotifyBanner('⚠️ Failed to load chats: ' + e.message);
+  } finally {
+    loadingDiv.style.display = 'none';
+  }
+}
+
+function getChatName(chat) {
+  // Prefer contacts name over raw address in the dropdown too
+  if (chat.displayName) return chat.displayName;
+  if (chat.chatIdentifier) {
+    const byContact = findContactName(chat.chatIdentifier);
+    if (byContact && byContact !== chat.chatIdentifier) return byContact;
+    return chat.chatIdentifier;
+  }
+  if (chat.participants && chat.participants.length) {
+    return chat.participants.map(p => {
+      const n = findContactName(p.address);
+      return n || p.address;
+    }).join(', ');
+  }
+  return 'Unknown';
+}
+
+function updateServerSelect() {
+  serverSelect.innerHTML = '';
+  if (chats.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'No chats';
+    serverSelect.appendChild(opt);
+    return;
+  }
+  for (const chat of chats) {
+    const opt = document.createElement('option');
+    opt.value = chat.guid;
+    opt.textContent = getChatName(chat);
+    if (chat.guid === currentServer) opt.selected = true;
+    serverSelect.appendChild(opt);
+  }
+}
+
+serverSelect.addEventListener('change', async (e) => {
+  const guid = e.target.value;
+  if (!guid) return;
+  const chat = chats.find(c => c.guid === guid);
+  if (chat) await openChat(guid, getChatName(chat));
+});
+
+document.getElementById('createServerBtn').addEventListener('click', () => {
+  document.getElementById('usersModal').style.display = 'flex';
+  loadUsersList('');
+});
+
+/* ---------- Open chat ---------- */
+async function openChat(guid, name) {
+  currentServer = guid;
+  messages = [];
+  displayed.clear();
+  cancelReply();
+  chatDiv.innerHTML = '<div class="empty-state"><div class="loader" style="width:36px;height:36px;border:4px solid var(--border-color);border-top-color:var(--button-background);border-radius:50%;animation:spin 0.8s linear infinite;"></div></div>';
+  await loadMessages(guid);
+}
+
+/* ---------- Load messages ---------- */
+async function loadMessages(guid) {
+  try {
+    const res = await bbFetch(`/chat/${encodeURIComponent(guid)}/message?limit=100&offset=0&sort=DESC`);
+    const serverMsgs = (res.data || []).slice().reverse();
+
+    for (const m of serverMsgs) {
+      if (m && m.guid) notifiedGuids.add(m.guid);
+    }
+
+    const combined = combineWithPending(serverMsgs, guid);
+    messages = combined;
+    clearChatAndRenderAll();
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+  } catch (e) {
+    console.error('loadMessages failed:', e);
+    chatDiv.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Failed to load messages:<br>${escapeHtml(e.message)}</p></div>`;
+  }
+}
+
+function combineWithPending(serverMsgs, guid) {
+  const now = Date.now();
+  for (let i = pendingSends.length - 1; i >= 0; i--) {
+    const p = pendingSends[i];
+    if (p.chatGuid !== guid) continue;
+    const match = serverMsgs.find(m =>
+      m.isFromMe &&
+      (m.text || '').trim() === p.text.trim()
+    );
+    if (match) { pendingSends.splice(i, 1); }
+    else if (now - p.sentAt > 15000) { pendingSends.splice(i, 1); }
+  }
+  const stillPending = pendingSends
+    .filter(p => p.chatGuid === guid)
+    .map(p => ({
+      guid: p.tempGuid,
+      text: p.text,
+      isFromMe: true,
+      dateCreated: new Date(p.sentAt).toISOString(),
+      handle: { address: '' },
+      threadOriginatorGuid: p.replyToGuid || null,
+      _pending: true
+    }));
+  return serverMsgs.concat(stillPending);
+}
+
+/* ---------- Render ---------- */
+function clearChatAndRenderAll() {
+  chatDiv.innerHTML = '';
+  displayed.clear();
+  for (const m of messages) renderOneMessage(m, false);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+function renderOneMessage(msg, live = false) {
+  if (displayed.has(msg.guid)) return;
+  displayed.add(msg.guid);
+
+  const isMine = msg.isFromMe;
+  const el = document.createElement('div');
+  el.className = 'message ' + (isMine ? 'myMessage' : 'otherMessage');
+  el.dataset.id = msg.guid;
+
+  // Sender name: resolve via contacts (First + Last)
+  const senderAddr = (msg.handle && msg.handle.address) || '';
+  const displayName = getMessageSenderName(msg);
+
+  const pic = userProfiles[senderAddr] || 'https://www.thisiscolossal.com/wp-content/uploads/2024/01/spherewave.gif';
+
+  const text = msg.text || '';
+  const content = text.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)
+    ? `<img src="${escapeHtml(text)}" style="max-width:260px;border-radius:8px" />`
+    : (text.match(/^https?:\/\//i)
+        ? `<a href="${escapeHtml(text)}" target="_blank" rel="noreferrer">${escapeHtml(text)}</a>`
+        : escapeHtml(text));
+
+  const timestamp = formatTs(msg.dateCreated);
+
+  // ==========================================================
+  // iMessage-style Delivered / Read (no checkmarks).
+  // Auto-updates when pollTick reloads the message with
+  // dateDelivered / dateRead set by BlueBubbles.
+  // ==========================================================
+  let statusSuffix = '';
+  if (isMine && !msg._pending) {
+    if (msg.dateRead) {
+      statusSuffix = ' · Read';
+    } else if (msg.dateDelivered) {
+      statusSuffix = ' · Delivered';
+    }
+  }
+
+  // ==========================================================
+  // Reply preview — quoted snippet of the message being replied to
+  // ==========================================================
+  let replyPreviewHtml = '';
+  if (msg.threadOriginatorGuid) {
+    const original = messages.find(m => m.guid === msg.threadOriginatorGuid);
+    if (original) {
+      const origSender = getMessageSenderName(original);
+      const origText = (original.text || '').slice(0, 120);
+      replyPreviewHtml = `
+        <div class="reply-preview">
+          <strong>${escapeHtml(origSender)}</strong>
+          <span>${escapeHtml(origText)}${(original.text || '').length > 120 ? '…' : ''}</span>
+        </div>
+      `;
+    } else {
+      replyPreviewHtml = `<div class="reply-preview"><strong>Earlier message</strong></div>`;
+    }
+  }
+
+  // Reactions
+  const reactions = localReactions[msg.guid] || {};
+  let reactionHtml = '';
+  for (const emoji in reactions) {
+    if (reactions[emoji].length) {
+      reactionHtml += `<span class="reaction" data-emoji="${emoji}" data-message="${msg.guid}" title="${escapeHtml(reactions[emoji].join(', '))}">${emoji} ${reactions[emoji].length}</span>`;
+    }
+  }
+  const reactionsHtml = reactionHtml ? `<div class="reactions">${reactionHtml}</div>` : '';
+
+  // Reply button (restored)
+  const replyButton = `<button class="reply-btn" data-message="${msg.guid}">↳ Reply</button>`;
+
+  el.innerHTML = `
+    <div style="display: flex; align-items: flex-start; gap: 10px;">
+        <img src="${escapeHtml(pic)}" alt="pfp" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;">
+        <div style="flex: 1; min-width: 0;">
+            ${replyPreviewHtml}
+            <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
+                <strong style="flex-shrink: 0;">${escapeHtml(displayName)}</strong>
+                <div style="min-width: 0;">${content}</div>
+            </div>
+            <div class="timestamp">${escapeHtml(timestamp)}${statusSuffix}</div>
+            ${reactionsHtml}
+            ${replyButton}
+            <div class="emoji-picker-btn" data-message="${msg.guid}">😀</div>
+        </div>
+    </div>
+  `;
+
+  if (msg._pending) el.classList.add('sending');
+
+  // Emoji picker
+  const emojiBtn = el.querySelector('.emoji-picker-btn');
+  if (emojiBtn) {
+    const pickerEl = document.createElement('div');
+    pickerEl.className = 'emoji-picker';
+    pickerEl.style.display = 'none';
+    pickerEl.style.gridTemplateColumns = 'repeat(6, 1fr)';
+    const emojis = ['😀','🤣','😍','🤪','😎','😭','😡','😱','🤔','🤗','💀','🥀','✌️','🔥','🌾','💔','💩','🌫️'];
+    pickerEl.innerHTML = emojis.map(e => `<div class="emoji-option" data-emoji="${e}">${e}</div>`).join('');
+    el.appendChild(pickerEl);
+
+    emojiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pickerEl.style.display = pickerEl.style.display === 'grid' ? 'none' : 'grid';
+    });
+    pickerEl.querySelectorAll('.emoji-option').forEach(opt => {
+      opt.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await addReaction(msg.guid, opt.dataset.emoji);
+        pickerEl.style.display = 'none';
+      });
+    });
+    document.addEventListener('click', () => { pickerEl.style.display = 'none'; });
+  }
+
+  // Reply button handler — arms the reply target and focuses the input
+  const replyBtn = el.querySelector('.reply-btn');
+  if (replyBtn) {
+    replyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      armReply(msg);
+    });
+  }
+
+  // Reaction click
+  el.querySelectorAll('.reaction').forEach(r => {
+    r.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await addReaction(msg.guid, r.dataset.emoji);
+    });
+  });
+
+  // Options menu (hide)
+  if (isMine) {
+    const opt = document.createElement('div');
+    opt.className = 'options';
+    opt.textContent = '⋮';
+    const menu = document.createElement('div');
+    menu.className = 'options-menu';
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Hide';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      messages = messages.filter(m => m.guid !== msg.guid);
+      el.remove();
+      displayed.delete(msg.guid);
+      menu.style.display = 'none';
+    };
+    menu.appendChild(delBtn);
+    opt.onclick = (e) => {
+      e.stopPropagation();
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    };
+    el.appendChild(opt);
+    el.appendChild(menu);
+  }
+
+  chatDiv.appendChild(el);
+
+  if (live && !isMine && !msg._pending) {
+    if (!isTabActive) playPingSound();
+  }
+}
+
+/* ---------- Reply arming / cancellation ---------- */
+function armReply(msg) {
+  replyToGuid = msg.guid;
+  const sender = getMessageSenderName(msg);
+  const preview = (msg.text || '').slice(0, 60);
+  replyIndicatorText.textContent = `Replying to ${sender}: ${preview}${(msg.text || '').length > 60 ? '…' : ''}`;
+  replyIndicator.style.display = 'flex';
+  messageInput.focus();
+}
+
+function cancelReply() {
+  replyToGuid = null;
+  replyIndicator.style.display = 'none';
+}
+
+cancelReplyBtn.addEventListener('click', cancelReply);
+
+/* ---------- Reactions (local) ---------- */
+async function addReaction(messageId, emoji) {
+  if (!localReactions[messageId]) localReactions[messageId] = {};
+  const r = localReactions[messageId];
+  if (!r[emoji]) r[emoji] = [];
+  const idx = r[emoji].indexOf('You');
+  if (idx === -1) r[emoji].push('You');
+  else {
+    r[emoji].splice(idx, 1);
+    if (!r[emoji].length) delete r[emoji];
+  }
+  const msg = messages.find(m => m.guid === messageId);
+  if (msg) {
+    displayed.delete(messageId);
+    const existing = document.querySelector(`.message[data-id="${messageId}"]`);
+    if (existing) existing.remove();
+    renderOneMessage(msg, false);
+  }
+}
+
+/* ---------- Send message (with real iMessage reply support) ---------- */
+async function sendMessage() {
+  const text = (messageInput.value || '').trim();
+  if (!text || !currentServer) return;
+
+  messageInput.value = '';
+
+  const replyGuid = replyToGuid;
+  cancelReply();
+
+  const tempGuid = 'temp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  const sentAt = Date.now();
+  pendingSends.push({ tempGuid, text, chatGuid: currentServer, sentAt, replyToGuid: replyGuid });
+
+  const optimistic = {
+    guid: tempGuid,
+    text,
+    isFromMe: true,
+    dateCreated: new Date(sentAt).toISOString(),
+    handle: { address: '' },
+    threadOriginatorGuid: replyGuid || null,
+    _pending: true
+  };
+  messages.push(optimistic);
+  renderOneMessage(optimistic, false);
+  chatDiv.scrollTop = chatDiv.scrollHeight;
+
+  try {
+    const payload = {
+      chatGuid: currentServer,
+      message: text,
+      method: 'apple-script',
+      tempGuid: tempGuid
+    };
+    if (replyGuid) {
+      payload.selectedMessageGuid = replyGuid;
+      payload.partIndex = 0;
+    }
+
+    await bbFetch('/message/text', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    setTimeout(async () => {
+      if (currentServer) await loadMessages(currentServer);
+    }, 800);
+  } catch (err) {
+    console.error('sendMessage failed:', err);
+    showNotifyBanner('❌ Failed to send: ' + err.message);
+    const idx = pendingSends.findIndex(p => p.tempGuid === tempGuid);
+    if (idx >= 0) pendingSends.splice(idx, 1);
+    messages = messages.filter(m => m.guid !== tempGuid);
+    clearChatAndRenderAll();
+  }
+}
+sendBtn.addEventListener('click', sendMessage);
+messageInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* ---------- Polling & Notifications ---------- */
+let pollTimer = null;
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(pollTick, 4000);
+}
+
+async function pollTick() {
+  if (!bbConnected) return;
+
+  try {
+    const res = await bbFetch('/chat/query', {
+      method: 'POST',
+      body: JSON.stringify({
+        limit: 200, offset: 0,
+        with: ['lastMessage', 'participants'],
+        sort: 'lastmessage'
+      })
+    });
+    const newChats = res.data || [];
+
+    for (const chat of newChats) {
+      const last = chat.lastMessage;
+      if (!last || !last.guid) continue;
+
+      const prevGuid = lastSeenGuids.get(chat.guid);
+      if (prevGuid === last.guid) continue;
+
+      const wasKnown = prevGuid !== undefined;
+      lastSeenGuids.set(chat.guid, last.guid);
+
+      if (!wasKnown) continue;
+      if (last.isFromMe) continue;
+      if (!markNotified(last.guid)) continue;
+
+      notifyAboutNewMessage(chat);
+    }
+
+    const currentSelection = currentServer;
+    chats = newChats;
+    updateServerSelect();
+    if (currentSelection) serverSelect.value = currentSelection;
+  } catch (e) { /* ignore */ }
+
+  if (currentServer) {
+    try {
+      const res = await bbFetch(`/chat/${encodeURIComponent(currentServer)}/message?limit=100&offset=0&sort=DESC`);
+      const serverMsgs = (res.data || []).slice().reverse();
+
+      for (const m of serverMsgs) {
+        if (m && m.guid) notifiedGuids.add(m.guid);
+      }
+
+      const combined = combineWithPending(serverMsgs, currentServer);
+
+      // Compare not just GUIDs but also the read/delivered state so
+      // the timestamp suffix updates from "Delivered" → "Read" in place.
+      const oldSig = messages.map(m =>
+        `${m.guid}:${m.dateDelivered ? 1 : 0}:${m.dateRead ? 1 : 0}`
+      ).join('|');
+      const newSig = combined.map(m =>
+        `${m.guid}:${m.dateDelivered ? 1 : 0}:${m.dateRead ? 1 : 0}`
+      ).join('|');
+
+      if (oldSig !== newSig) {
+        const wasAtBottom = chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight < 80;
+        messages = combined;
+        clearChatAndRenderAll();
+        if (wasAtBottom) chatDiv.scrollTop = chatDiv.scrollHeight;
+      }
+    } catch (e) { /* ignore */ }
+  }
+}
+
+function notifyAboutNewMessage(chat) {
+  const last = chat.lastMessage;
+  if (!last) return;
+  const chatName = getChatName(chat);
+  const sender = getMessageSenderName(last);
+
+  let text = last.text || '';
+  if (!text && last.attachments && last.attachments.length) {
+    const mt = (last.attachments[0].mimeType || '').toLowerCase();
+    text = mt.startsWith('image/') ? '📷 Photo'
+         : mt.startsWith('video/') ? '🎬 Video'
+         : mt.startsWith('audio/') ? '🎵 Audio'
+         : '📎 Attachment';
+  }
+  if (!text) return;
+
+  const isCurrent = chat.guid === currentServer;
+  const bodyPreview = text.length > 120 ? text.slice(0, 117) + '…' : text;
+  const title = `💬 ${chatName}`;
+  const body = `${sender}: ${bodyPreview}`;
+
+  if (!isTabActive) {
+    playPingSound();
+    fireBrowserNotification(title, body, 'chat-' + chat.guid);
+    showNotifyBanner(`${title} · ${bodyPreview}`, 6000);
+  } else if (!isCurrent) {
+    showNotifyBanner(`${title} • ${bodyPreview}`, 5000);
+  }
+}
+
+/* ---------- Contacts (Users) Modal ---------- */
+async function loadUsersList(searchTerm = '') {
+  const usersList = document.getElementById('usersList');
+  usersList.innerHTML = '<div style="text-align:center;padding:30px;opacity:0.6;">Loading contacts...</div>';
+
+  if (!contacts.length) await loadContacts();
+
+  const searchLower = (searchTerm || '').toLowerCase().trim();
+  let filtered = contacts;
+  if (searchLower) {
+    filtered = contacts.filter(c => {
+      if ((c.displayName || '').toLowerCase().includes(searchLower)) return true;
+      if ((c.firstName || '').toLowerCase().includes(searchLower)) return true;
+      if ((c.lastName || '').toLowerCase().includes(searchLower)) return true;
+      if (c.phoneNumbers && c.phoneNumbers.some(p => p.address.toLowerCase().includes(searchLower))) return true;
+      if (c.emails && c.emails.some(e => e.address.toLowerCase().includes(searchLower))) return true;
+      return false;
+    });
+  }
+
+  if (!filtered.length) {
+    usersList.innerHTML = `<div style="text-align:center;padding:30px;opacity:0.6;">No contacts found${searchTerm ? ` matching "${escapeHtml(searchTerm)}"` : ''}</div>`;
+    return;
+  }
+
+  usersList.innerHTML = '';
+  filtered.slice(0, 200).forEach(c => {
+    let name = 'Unknown';
+    if (c.firstName && c.lastName) name = `${c.firstName} ${c.lastName}`;
+    else if (c.firstName) name = c.firstName;
+    else if (c.lastName) name = c.lastName;
+    else if (c.displayName) name = c.displayName;
+    else if (c.phoneNumbers?.[0]?.address) name = c.phoneNumbers[0].address;
+    else if (c.emails?.[0]?.address) name = c.emails[0].address;
+
+    const addr = (c.phoneNumbers?.[0]?.address) || (c.emails?.[0]?.address) || '';
+
+    const div = document.createElement('div');
+    div.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border-color);border-radius:10px;margin-bottom:4px;cursor:pointer;gap:12px;transition:background 0.2s;`;
+    div.onmouseenter = () => div.style.background = 'var(--secondary-background)';
+    div.onmouseleave = () => div.style.background = 'transparent';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+        <img src="https://www.thisiscolossal.com/wp-content/uploads/2024/01/spherewave.gif" style="width:40px;height:40px;border-radius:50%;flex-shrink:0;">
+        <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
+          <strong style="color:var(--text-color);word-break:break-word;font-size:14px;">${escapeHtml(name)}</strong>
+          <span style="font-size:11px;opacity:0.6;">${escapeHtml(addr)}</span>
+        </div>
+      </div>
+      ${addr ? `<button class="dm-btn" data-address="${escapeHtml(addr)}" style="background:var(--button-background);color:var(--button-text);border:none;border-radius:30px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:600;flex-shrink:0;font-family:inherit;">DM</button>` : ''}
+    `;
+    usersList.appendChild(div);
+  });
+
+  usersList.querySelectorAll('.dm-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const addr = btn.dataset.address;
+      await startChatWithAddress(addr);
+    });
+  });
+}
+
+async function startChatWithAddress(address) {
+  try {
+    const existing = chats.find(c => {
+      if (c.chatIdentifier === address) return true;
+      if (c.participants && c.participants.some(p => p.address === address)) return true;
+      return false;
+    });
+
+    if (existing) {
+      serverSelect.value = existing.guid;
+      await openChat(existing.guid, getChatName(existing));
+      document.getElementById('usersModal').style.display = 'none';
+      showNotifyBanner(`Opened chat with ${findContactName(address)}`);
+      return;
+    }
+
+    showNotifyBanner('Creating chat...');
+    await bbFetch('/chat/new', {
+      method: 'POST',
+      body: JSON.stringify({
+        addresses: [address],
+        method: 'apple-script'
+      })
+    });
+
+    await loadChats();
+    document.getElementById('usersModal').style.display = 'none';
+    showNotifyBanner('✅ Chat created');
+  } catch (e) {
+    console.error('startChatWithAddress failed:', e);
+    showNotifyBanner('❌ Failed to create chat: ' + e.message);
+  }
+}
+
+document.getElementById('usersBtn').addEventListener('click', async () => {
+  document.getElementById('usersModal').style.display = 'flex';
+  await loadUsersList('');
+});
+document.getElementById('closeUsersBtn').addEventListener('click', () => {
+  document.getElementById('usersModal').style.display = 'none';
+});
+document.getElementById('usersModal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('usersModal')) {
+    document.getElementById('usersModal').style.display = 'none';
+  }
+});
+document.getElementById('userSearchInput').addEventListener('input', (e) => {
+  clearTimeout(window.__userSearchT);
+  window.__userSearchT = setTimeout(() => {
+    loadUsersList(e.target.value);
+  }, 250);
+});
+
+/* ---------- Profile Picture Modal ---------- */
+document.getElementById('profileBtn').addEventListener('click', () => {
+  const modal = document.getElementById('profileModal');
+  modal.style.display = 'flex';
+  document.getElementById('profileUrlInput').value = '';
+  document.getElementById('profilePreview').src = 'https://via.placeholder.com/80';
+});
+document.getElementById('cancelProfileBtn').addEventListener('click', () => {
+  document.getElementById('profileModal').style.display = 'none';
+});
+document.getElementById('profileUrlInput').addEventListener('input', (e) => {
+  const url = e.target.value.trim();
+  if (url) document.getElementById('profilePreview').src = url;
+});
+document.getElementById('saveProfileBtn').addEventListener('click', () => {
+  const url = document.getElementById('profileUrlInput').value.trim();
+  if (!url) { showNotifyBanner('Enter a valid image URL'); return; }
+  userProfiles[currentUser.username] = url;
+  clearChatAndRenderAll();
+  document.getElementById('profileModal').style.display = 'none';
+  showNotifyBanner('✅ Profile picture updated');
+});
+
+/* ---------- Sign out ---------- */
+document.getElementById('signoutBtn').addEventListener('click', () => {
+  if (pollTimer) clearInterval(pollTimer);
+  bbConnected = false;
+  currentServer = null;
+  messages = [];
+  chats = [];
+  contacts = [];
+  pendingSends.length = 0;
+  notifiedGuids.clear();
+  lastSeenGuids.clear();
+  cancelReply();
+
+  localStorage.removeItem('bb_url');
+  localStorage.removeItem('bb_pass');
+
+  chatApp.style.display = 'none';
+  pinOverlay.style.display = 'flex';
+  usernameInput.value = '';
+  pinInput.value = '';
+  chatDiv.innerHTML = '';
+  serverSelect.innerHTML = '<option value="">Loading chats...</option>';
+});
+
+/* ---------- Header scroll behavior (unchanged) ---------- */
+const headerEl = document.querySelector('header');
+let lastScrollTop = 0;
+let scrollTimeout;
+chatDiv.addEventListener('scroll', () => {
+  if (scrollTimeout) clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => {
+    const scrollTop = chatDiv.scrollTop;
+    const scrollHeight = chatDiv.scrollHeight;
+    const clientHeight = chatDiv.clientHeight;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const isAtBottom = distanceFromBottom <= 50;
+    const direction = scrollTop > lastScrollTop ? 'down' : 'up';
+
+    if (isAtBottom) {
+      headerEl.classList.remove('scrolled');
+    } else if (scrollTop <= 0) {
+      headerEl.classList.remove('scrolled');
+    } else if (direction === 'down') {
+      headerEl.classList.add('scrolled');
+    } else {
+      headerEl.classList.add('scrolled');
+    }
+    lastScrollTop = scrollTop;
+  }, 50);
+});
+
+let hoverTimeout = null;
+headerEl.addEventListener('mouseenter', () => {
+  if (headerEl.classList.contains('scrolled')) {
+    clearTimeout(hoverTimeout);
+    hoverTimeout = setTimeout(() => headerEl.classList.remove('scrolled'), 100);
+  }
+});
+headerEl.addEventListener('mouseleave', () => {
+  clearTimeout(hoverTimeout);
+  if (chatDiv.scrollTop > 0) {
+    hoverTimeout = setTimeout(() => headerEl.classList.add('scrolled'), 300);
+  }
+});
+
+/* ============================================================
+   BACKGROUND CUSTOMIZATION — VERBATIM from Chatify
+   ============================================================ */
+(function () {
+  'use strict';
+
+  const BACKGROUND_KEY = 'chatify_chat_background';
+  const IMGBB_KEY = '588cf67669e7952039431719ce76ff7d';
+
+  let injected = false;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 40;
+
+  function buildButton() {
+    const btn = document.createElement('button');
+    btn.id = 'backgroundBtn';
+    btn.className = 'button-clear';
+    btn.title = 'Customize chat background';
+    btn.textContent = 'Background';
+    return btn;
+  }
+
+  function buildModal() {
+    if (document.getElementById('backgroundModal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'backgroundModal';
+    modal.className = 'profile-modal';
+    modal.innerHTML = `
+      <div class="profile-modal-content" style="max-width:480px !important;width:92% !important;padding:20px !important;">
+        <h3 style="margin-top:0;">🎨 Customize Chat Background</h3>
+        <p style="font-size:12px;opacity:0.7;margin:0 0 12px 0;">
+          Set a custom background for your chat. Paste an image URL or upload an image.
+        </p>
+        <input type="text" id="backgroundUrlInput" placeholder="Enter image URL (https://...)"
+          style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);
+                 background:var(--secondary-background);color:var(--text-color);font-size:14px;
+                 box-sizing:border-box;margin-bottom:10px;" />
+        <div id="backgroundPreview"
+          style="display:none;width:100%;height:140px;border-radius:12px;
+                 border:1px solid var(--border-color);background-size:cover;
+                 background-position:center;margin-bottom:10px;"></div>
+        <button id="uploadBackgroundBtn"
+          style="width:100%;padding:10px;border-radius:12px;border:1px dashed var(--border-color);
+                 background:var(--secondary-background);color:var(--text-color);
+                 cursor:pointer;font-size:14px;margin-bottom:12px;">
+          📁 Upload Image (ImgBB)
+        </button>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button id="clearBackgroundBtn"
+            style="padding:8px 16px;border-radius:8px;border:none;background:#ccc;color:#333;
+                   cursor:pointer;font-weight:600;">Clear</button>
+          <button id="cancelBackgroundBtn"
+            style="padding:8px 16px;border-radius:8px;border:none;background:#ccc;color:#333;
+                   cursor:pointer;font-weight:600;">Cancel</button>
+          <button id="saveBackgroundBtn"
+            style="padding:8px 16px;border-radius:8px;border:none;
+                   background:var(--button-background);color:var(--button-text);
+                   cursor:pointer;font-weight:600;">Save</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  function tryInject() {
+    attempts++;
+    if (document.getElementById('backgroundBtn')) { injected = true; return true; }
+    buildModal();
+    const headerActions = document.querySelector('.header-actions');
+    if (headerActions) {
+      headerActions.appendChild(buildButton());
+      injected = true;
+      return true;
+    }
+    return false;
+  }
+
+  function startRetrying() {
+    const interval = setInterval(() => {
+      if (tryInject()) { clearInterval(interval); return; }
+      if (attempts >= MAX_ATTEMPTS) {
+        clearInterval(interval);
+        if (!document.getElementById('backgroundBtn')) {
+          const btn = buildButton();
+          btn.style.cssText = `
+            position: fixed; bottom: 80px; right: 20px; z-index: 9999;
+            background: var(--button-background, #4caf50); color: white;
+            padding: 10px 16px; border-radius: 30px; border: none;
+            font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+          `;
+          document.body.appendChild(btn);
+        }
+      }
+    }, 500);
+    tryInject();
+    if (injected) clearInterval(interval);
+  }
+
+  function wireModal() {
+    const modal = document.getElementById('backgroundModal');
+    const input = document.getElementById('backgroundUrlInput');
+    const preview = document.getElementById('backgroundPreview');
+    const uploadBtn = document.getElementById('uploadBackgroundBtn');
+    const cancelBtn = document.getElementById('cancelBackgroundBtn');
+    const clearBtn = document.getElementById('clearBackgroundBtn');
+    const saveBtn = document.getElementById('saveBackgroundBtn');
+    const chatApp = document.getElementById('chatApp');
+
+    if (!modal || !input || !chatApp) return;
+
+    function apply(url) {
+      if (url) {
+        chatApp.style.setProperty('background', `url('${url}') center/cover no-repeat fixed`, 'important');
+      } else {
+        chatApp.style.removeProperty('background');
+      }
+    }
+
+    const saved = localStorage.getItem(BACKGROUND_KEY);
+    if (saved) apply(saved);
+
+    function updatePreview() {
+      const url = input.value.trim();
+      if (url) {
+        preview.style.backgroundImage = `url('${url}')`;
+        preview.style.display = 'block';
+      } else {
+        preview.style.backgroundImage = 'none';
+        preview.style.display = 'none';
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#backgroundBtn')) {
+        e.stopPropagation();
+        input.value = localStorage.getItem(BACKGROUND_KEY) || '';
+        updatePreview();
+        modal.style.display = 'flex';
+      }
+    });
+
+    input.addEventListener('input', updatePreview);
+    cancelBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+
+    clearBtn.addEventListener('click', () => {
+      localStorage.removeItem(BACKGROUND_KEY);
+      apply('');
+      input.value = '';
+      updatePreview();
+      if (typeof showNotifyBanner === 'function') showNotifyBanner('Background cleared');
+      modal.style.display = 'none';
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const url = input.value.trim();
+      if (url) {
+        try { new URL(url); }
+        catch { if (typeof showNotifyBanner === 'function') showNotifyBanner('Invalid URL'); return; }
+        localStorage.setItem(BACKGROUND_KEY, url);
+        apply(url);
+        if (typeof showNotifyBanner === 'function') showNotifyBanner('✅ Background saved!');
+      } else {
+        localStorage.removeItem(BACKGROUND_KEY);
+        apply('');
+        if (typeof showNotifyBanner === 'function') showNotifyBanner('Background cleared');
+      }
+      modal.style.display = 'none';
+    });
+
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        if (typeof showNotifyBanner === 'function') showNotifyBanner('Image too large (max 10MB)');
+        fileInput.value = '';
+        return;
+      }
+      const orig = uploadBtn.textContent;
+      uploadBtn.textContent = '⏳ Uploading...';
+      uploadBtn.disabled = true;
+      try {
+        const reader = new FileReader();
+        const base64 = await new Promise((res, rej) => {
+          reader.onload = () => res(reader.result.split(',')[1]);
+          reader.onerror = rej;
+          reader.readAsDataURL(file);
+        });
+        const fd = new FormData();
+        fd.append('key', IMGBB_KEY);
+        fd.append('image', base64);
+        const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+        const j = await r.json();
+        if (j.success) {
+          input.value = j.data.url;
+          updatePreview();
+          if (typeof showNotifyBanner === 'function') showNotifyBanner('✅ Uploaded! Click Save.');
+        } else {
+          if (typeof showNotifyBanner === 'function') showNotifyBanner('❌ Upload failed');
+        }
+      } catch (err) {
+        if (typeof showNotifyBanner === 'function') showNotifyBanner('❌ Upload failed: ' + err.message);
+      } finally {
+        uploadBtn.textContent = orig;
+        uploadBtn.disabled = false;
+        fileInput.value = '';
+      }
+    });
+  }
+
+  function init() {
+    buildModal();
+    startRetrying();
+    wireModal();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  window.addEventListener('load', () => tryInject());
+})();
+
+/* ---------- GIF Keyboard (unchanged) ---------- */
+const GIPHY_API_KEY = 'zp13FWKyoD50OMLmwd3mjKcdrQrhWFms';
+const gifKeyboard = document.getElementById('gifKeyboard');
+const gifSearchInput = document.getElementById('gifSearchInput');
+const gifResults = document.getElementById('gifResults');
+let currentSearchTimeout = null;
+
+document.getElementById('gifBtn').addEventListener('click', () => {
+  gifKeyboard.style.display = gifKeyboard.style.display === 'flex' ? 'none' : 'flex';
+  if (gifKeyboard.style.display === 'flex') searchGifs('trending');
+});
+document.getElementById('closeGifBtn').addEventListener('click', () => {
+  gifKeyboard.style.display = 'none';
+});
+gifSearchInput.addEventListener('input', (e) => {
+  if (currentSearchTimeout) clearTimeout(currentSearchTimeout);
+  const t = e.target.value.trim();
+  currentSearchTimeout = setTimeout(() => searchGifs(t || 'trending'), 500);
+});
+
+async function searchGifs(query) {
+  gifResults.innerHTML = '<div class="loading-gifs">🎬 Loading GIFs...</div>';
+  try {
+    const url = query === 'trending'
+      ? `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20&rating=pg-13`
+      : `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=20&rating=pg-13`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.data && data.data.length) {
+      gifResults.innerHTML = '';
+      data.data.forEach(gif => {
+        const gifUrl = gif.images.fixed_height.url || gif.images.original.url;
+        const item = document.createElement('div');
+        item.className = 'gif-result-item';
+        item.innerHTML = `<img src="${gifUrl}" alt="gif" loading="lazy" />`;
+        item.addEventListener('click', () => {
+          messageInput.value = gifUrl;
+          sendMessage();
+          gifKeyboard.style.display = 'none';
+          gifSearchInput.value = '';
+        });
+        gifResults.appendChild(item);
+      });
+    } else {
+      gifResults.innerHTML = '<div class="loading-gifs">😢 No GIFs found</div>';
+    }
+  } catch (e) {
+    gifResults.innerHTML = '<div class="loading-gifs">❌ Failed to load GIFs</div>';
+  }
+}
+
+/* ---------- Image Upload (unchanged) ---------- */
+const IMGBB_API_KEY = '588cf67669e7952039431719ce76ff7d';
+const imageBtn = document.getElementById('imageBtn');
+const imageFileInput = document.createElement('input');
+imageFileInput.type = 'file';
+imageFileInput.accept = 'image/*';
+imageFileInput.style.display = 'none';
+document.body.appendChild(imageFileInput);
+
+imageBtn.addEventListener('click', () => imageFileInput.click());
+imageFileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showNotifyBanner('Image too large (max 10MB)'); imageFileInput.value = ''; return; }
+
+  const orig = imageBtn.textContent;
+  imageBtn.textContent = '⏳';
+  imageBtn.disabled = true;
+  try {
+    const reader = new FileReader();
+    const base64 = await new Promise((res, rej) => {
+      reader.onload = () => res(reader.result.split(',')[1]);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    });
+    const fd = new FormData();
+    fd.append('key', IMGBB_API_KEY);
+    fd.append('image', base64);
+    const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+    const j = await r.json();
+    if (j.success) {
+      messageInput.value = j.data.url;
+      sendMessage();
+      showNotifyBanner('✅ Image sent');
+    } else {
+      showNotifyBanner('❌ Upload failed');
+    }
+  } catch (err) {
+    showNotifyBanner('❌ Upload failed: ' + err.message);
+  } finally {
+    imageBtn.textContent = orig;
+    imageBtn.disabled = false;
+    imageFileInput.value = '';
+  }
+});
+
+/* ---------- Auto-connect ---------- */
+(async function autoConnect() {
+  const u = localStorage.getItem('bb_url');
+  const p = localStorage.getItem('bb_pass');
+  if (!u || !p) return;
+
+  BB_BASE_URL = u;
+  BB_PASSWORD = p;
+
+  try {
+    await bbFetch('/ping');
+    bbConnected = true;
+    try { await ensureNotificationPermission(); } catch (e) {}
+    try { getAudioCtx(); } catch (e) {}
+
+    pinOverlay.style.display = 'none';
+    chatApp.style.display = 'flex';
+
+    // Load contacts first so names resolve in the initial render
+    await loadContacts();
+    await loadChats();
+    startPolling();
+
+    showNotifyBanner('✅ Reconnected to BlueBubbles');
+  } catch (e) {
+    console.warn('Auto-connect failed, showing login.');
+    pinOverlay.style.display = 'flex';
+    chatApp.style.display = 'none';
+  }
+})();
+
+console.log('🚀 Chatify Air ready — contact names, iMessage-style read/delivered, real reply threading.');
+</script>
+</body>
+</html>
