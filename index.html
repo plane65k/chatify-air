@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="icon" type="image/png" href="https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png">
+<link rel="icon" type="image/png" href="https://res.cloudinary.com/dceqg5cky/image/upload/v1792132171/chatify_logo_light_jinudp.png">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title id="pageTitle">Chatify Air</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
-  /* ============================================================
-     INTRO / THEME CSS — VERBATIM from Chatify (unchanged)
-     ============================================================ */
   body.theme-transitioning * {
     transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
                 color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
@@ -43,7 +41,7 @@
     display: flex; align-items: center; gap: 20px; z-index: 1001;
   }
   .circle {
-    width: 140px; height: 140px; background: #34a853; border-radius: 50%;
+    width: 140px; height: 140px; background: #218aff; border-radius: 50%;
     transform: scale(3);
     animation: circleRise 1.02s ease-in-out forwards, moveRight 0.24s ease-out 0.91s forwards;
   }
@@ -62,19 +60,16 @@
 </style>
 
 <style>
-/* ============================================================
-   MAIN THEME + LAYOUT CSS — VERBATIM from Chatify (unchanged)
-   ============================================================ */
 :root {
   --background-color: #f5f5f5;
   --text-color: #333333;
   --card-background: #ffffff;
-  --button-background: #4caf50;
+  --button-background: #218aff;
   --button-text: #ffffff;
   --secondary-background: #fafafa;
   --border-color: #ccc;
   --shadow-color: rgba(0,0,0,0.2);
-  --message-my-background: #4caf50;
+  --message-my-background: #218aff;
   --message-my-text: #ffffff;
   --message-other-background: #e0e0e0;
   --message-other-text: #000000;
@@ -85,12 +80,12 @@
   --background-color: #1a1a1a;
   --text-color: #ffffff;
   --card-background: #2c2c2c;
-  --button-background: #45a049;
+  --button-background: #218aff;
   --button-text: #ffffff;
   --secondary-background: #333333;
   --border-color: #555555;
   --shadow-color: rgba(255,255,255,0.1);
-  --message-my-background: #45a049;
+  --message-my-background: #218aff;
   --message-my-text: #ffffff;
   --message-other-background: #4a4a4a;
   --message-other-text: #ffffff;
@@ -135,7 +130,7 @@ html,body{
   font-size: 14px; transition: border-color 0.25s, box-shadow 0.25s;
   box-sizing: border-box;
 }
-.pin-left .input-group input:focus { outline: none; border-color: var(--button-background); box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.12); }
+.pin-left .input-group input:focus { outline: none; border-color: var(--button-background); box-shadow: 0 0 0 3px rgba(33, 138, 255, 0.12); }
 #pinBtn {
   width: 100%; padding: 12px; border-radius: 30px;
   font-size: 15px; font-weight: 600; margin-top: 4px;
@@ -143,12 +138,12 @@ html,body{
   border: none; cursor: pointer; transition: all 0.25s;
   letter-spacing: 0.3px;
 }
-#pinBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3); }
+#pinBtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(33, 138, 255, 0.3); }
 #pinBtn:disabled { opacity: 0.6; cursor: wait; }
 .pin-right {
   flex: 1 1 50%; padding: 0;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
-  background: linear-gradient(145deg, #2e7d32 0%, #1b5e20 50%, #0d3b0f 100%);
+  background: linear-gradient(145deg, #218aff 0%, #1a6fd4 50%, #0d4a9e 100%);
   color: white; text-align: center; position: relative; overflow: hidden;
   min-width: 220px; min-height: 300px; border-radius: 0 28px 28px 0;
 }
@@ -211,7 +206,7 @@ header {
   box-shadow: 0 8px 32px rgba(0,0,0,0.35);
   position: absolute; z-index: 10;
   width: 95%; max-width: 1200px;
-  transition: width 0.25s ease, max-width 0.1s ease;
+  transition: width 0.25s ease, max-width 0.1s ease, background-color 0.5s ease;
   margin: 0; top: 13px; left: 50%; transform: translateX(-50%);
 }
 header.scrolled {
@@ -227,24 +222,49 @@ body { overflow: hidden; }
 #loading { display: none; padding: 18px; align-items: center; justify-content: center; flex-shrink: 0; }
 .loader {
   width: 36px; height: 36px;
-  background-image: url("https://res.cloudinary.com/dceqg5cky/image/upload/v1767927041/176792680500277049_fny3u3.png");
+  background-image: url("https://res.cloudinary.com/dceqg5cky/image/upload/v1792131827/chatify_air_loading_bz6t7m.png");
   background-size: contain; background-repeat: no-repeat; background-position: center;
   animation: spin 3s linear infinite; height: 180px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   MESSAGE BUBBLES
+   The animation is only on .message-new so re-renders don't
+   replay it. New bubbles get the class once, then it's
+   stripped automatically by the animation-once tracking.
+   ============================================================ */
 .message {
   max-width: 72%; padding: 12px 14px; border-radius: 20px;
   font-size: 14px; position: relative; word-break: break-word;
-  transition: transform .18s, opacity .18s;
+  transition: transform .18s, opacity .18s, border-radius .35s ease, padding .35s ease, background-color .35s ease;
   display: flex; align-items: center;
+}
+.message-new.myMessage {
+  animation: bubbleIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.message-new.otherMessage {
+  animation: bubbleInLeft 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes bubbleIn {
+  0% { opacity: 0; transform: translateY(12px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes bubbleInLeft {
+  0% { opacity: 0; transform: translateX(-16px) scale(0.96); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
 }
 .myMessage {
   align-self: flex-end; background: var(--message-my-background);
   color: var(--message-my-text); border-bottom-right-radius: 6px;
+  border-radius: 22px 22px 6px 22px;
+  padding: 10px 16px;
 }
 .otherMessage {
   align-self: flex-start; background: var(--message-other-background);
   color: var(--message-other-text); border-bottom-left-radius: 6px;
+  border-radius: 22px 22px 22px 6px;
+  padding: 10px 16px;
 }
 .timestamp {
   display: block; font-size: 10px; color: var(--text-color);
@@ -302,13 +322,13 @@ footer button {
 #serverSelect option { background: var(--card-background); color: var(--text-color); padding: 8px; }
 #serverSelect:focus { outline: 2px solid var(--button-background); outline-offset: 2px; }
 .gif-btn {
-  background: rgba(69, 190, 74, 0.8); border: none; color: white;
+  background: rgba(33, 138, 255, 0.8); border: none; color: white;
   font-size: 1.5rem; padding: 0.8rem; width: 3rem; height: 3rem;
   border-radius: 50%; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.25s ease; margin-right: 8px;
 }
-.gif-btn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(69, 190, 74, 0.7); }
+.gif-btn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(33, 138, 255, 0.7); }
 .gif-keyboard {
   position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
   width: 90%; max-width: 500px; min-width: 280px;
@@ -382,7 +402,7 @@ footer button {
 #usersList::-webkit-scrollbar-thumb { background: var(--button-background); border-radius: 10px; }
 .notify-banner {
   position: fixed; left: 50%; transform: translateX(-50%); top: 18px;
-  background: linear-gradient(90deg, var(--button-background), #2e7d32);
+  background: linear-gradient(90deg, var(--button-background), #1a6fd4);
   color: var(--button-text); padding: 12px 18px; border-radius: 999px;
   box-shadow: 0 12px 30px var(--shadow-color); z-index: 200;
   display: none; animation: bannerIn .35s ease; font-family: inherit;
@@ -424,104 +444,69 @@ a { color: #0a66c2; text-decoration: underline; }
 }
 .emoji-option:hover { background: var(--secondary-background); }
 .image-btn {
-  background: rgba(69, 190, 74, 0.8); border: none; color: white;
+  background: rgba(33, 138, 255, 0.8); border: none; color: white;
   font-size: 1.5rem; padding: 0.8rem; width: 3rem; height: 3rem;
   border-radius: 50%; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.25s ease; margin-right: 8px; position: relative;
 }
-.image-btn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(69, 190, 74, 0.7); }
+.image-btn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(33, 138, 255, 0.7); }
 .image-btn:disabled { opacity: 0.6; transform: none !important; box-shadow: none !important; cursor: not-allowed; }
 
-/* ============================================================
-   REPLY FEATURE (restored) — same visual language as Chatify
-   ============================================================ */
+/* REPLY FEATURE */
 .reply-btn {
-  background: none;
-  border: none;
-  color: var(--button-background);
-  cursor: pointer;
-  font-size: 11px;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border-radius: 12px;
-  transition: background 0.2s;
-  font-family: inherit;
+  background: none; border: none; color: var(--button-background);
+  cursor: pointer; font-size: 11px; margin-top: 4px; padding: 2px 8px;
+  border-radius: 12px; transition: background 0.2s, opacity 0.2s;
+  font-family: inherit; display: inline-flex; align-items: center; gap: 3px;
+  opacity: 0.55; font-weight: 600; letter-spacing: 0.2px;
 }
-.myMessage .reply-btn {
-  color: rgba(255, 255, 255, 0.9);
-}
-.reply-btn:hover {
-  background: var(--secondary-background);
-}
-.myMessage .reply-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Quoted preview rendered at top of a reply bubble */
+.reply-btn:hover { background: var(--secondary-background); opacity: 1; }
+.myMessage .reply-btn { color: rgba(255, 255, 255, 0.85); }
+.myMessage .reply-btn:hover { background: rgba(255, 255, 255, 0.2); }
 .reply-preview {
-  background: rgba(0, 0, 0, 0.08);
-  border-left: 3px solid var(--button-background);
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-width: 100%;
-  overflow: hidden;
+  background: rgba(0, 0, 0, 0.06); border-radius: 10px;
+  padding: 6px 10px 6px 14px; margin-bottom: 6px;
+  font-size: 12px; display: flex; flex-direction: column; gap: 2px;
+  position: relative; cursor: pointer; transition: background 0.2s;
+  overflow: hidden; user-select: none;
 }
-.myMessage .reply-preview {
-  background: rgba(255, 255, 255, 0.18);
-  border-left-color: rgba(255, 255, 255, 0.65);
+.reply-preview::before {
+  content: ''; position: absolute; left: 0; top: 4px; bottom: 4px;
+  width: 3px; background: var(--button-background); border-radius: 0 2px 2px 0;
 }
-.reply-preview strong {
-  font-weight: 600;
-  opacity: 0.9;
-}
-.reply-preview span {
-  opacity: 0.75;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Reply-in-progress indicator near the footer input */
+.reply-preview:hover { background: rgba(0, 0, 0, 0.1); }
+.myMessage .reply-preview { background: rgba(255, 255, 255, 0.18); }
+.myMessage .reply-preview::before { background: rgba(255, 255, 255, 0.7); }
+.myMessage .reply-preview:hover { background: rgba(255, 255, 255, 0.26); }
+.reply-preview strong { font-size: 11px; font-weight: 700; opacity: 0.95; letter-spacing: 0.2px; }
+.reply-preview span { opacity: 0.78; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; }
 .reply-indicator {
-  position: absolute;
-  bottom: 72px;
-  left: 10px;
-  right: 10px;
-  background: var(--card-background);
-  border: 1px solid var(--border-color);
-  border-left: 3px solid var(--button-background);
-  border-radius: 10px;
-  padding: 6px 12px;
-  font-size: 12px;
-  color: var(--text-color);
-  display: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  box-shadow: 0 4px 12px var(--shadow-color);
-  z-index: 9;
+  position: absolute; bottom: 72px; left: 10px; right: 10px;
+  background: var(--card-background); border: 1px solid var(--border-color);
+  border-radius: 14px; padding: 10px 12px 10px 16px; display: none;
+  align-items: center; gap: 10px; box-shadow: 0 8px 24px var(--shadow-color);
+  z-index: 9; animation: replyBarIn 0.18s ease;
 }
-.reply-indicator span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+@keyframes replyBarIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+.reply-indicator::before {
+  content: ''; position: absolute; left: 0; top: 8px; bottom: 8px;
+  width: 3px; background: var(--button-background); border-radius: 0 3px 3px 0;
+}
+.reply-indicator-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.reply-indicator-label { font-size: 10.5px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+.reply-indicator-label strong { color: var(--button-background); text-transform: none; letter-spacing: 0; font-size: 11.5px; font-weight: 700; }
+.reply-indicator-text { font-size: 12.5px; opacity: 0.85; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .reply-indicator button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-color);
-  opacity: 0.6;
-  font-size: 14px;
-  padding: 0 4px;
+  background: none; border: none; cursor: pointer; color: var(--text-color);
+  opacity: 0.5; font-size: 16px; padding: 4px 8px; border-radius: 50%;
+  transition: all 0.2s; flex-shrink: 0;
 }
-
+.reply-indicator button:hover { background: var(--secondary-background); opacity: 1; }
+.history-loading { text-align: center; padding: 14px; font-size: 11px; opacity: 0.55; letter-spacing: 0.4px; }
 .ghost-message { opacity: 0.55 !important; animation: ghostPulse 1.4s ease-in-out infinite; pointer-events: none; }
 .ghost-message .timestamp::after { content: ' · sending'; font-style: italic; opacity: 0.8; }
 @keyframes ghostPulse { 0%,100% { opacity: 0.55; } 50% { opacity: 0.35; } }
@@ -531,13 +516,16 @@ a { color: #0a66c2; text-decoration: underline; }
   padding: 40px; text-align: center; opacity: 0.6; gap: 12px;
 }
 .empty-state .icon { font-size: 48px; }
+
+/* Default iMessage-style bubbles (now permanent) */
+.myMessage .reply-preview { background: rgba(255, 255, 255, 0.22); }
+.myMessage .reply-preview::before { background: rgba(255, 255, 255, 0.8); }
+.myMessage .reply-preview:hover { background: rgba(255, 255, 255, 0.3); }
+.myMessage .reply-btn { color: rgba(255, 255, 255, 0.9); }
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     INTRO
-     ============================================================ -->
 <div class="transition-overlay" id="transitionOverlay"></div>
 <div class="white-overlay" id="whiteOverlay"></div>
 <div class="intro" id="intro">
@@ -545,40 +533,32 @@ a { color: #0a66c2; text-decoration: underline; }
   <div class="text" id="chatifyText">Chatify Air</div>
 </div>
 
-<!-- ============================================================
-     PIN OVERLAY
-     ============================================================ -->
 <div id="pinOverlay" aria-hidden="false">
   <div id="pinBox">
     <div class="pin-left">
       <div class="logo-area">
-        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png" alt="Chatify Air Logo" />
+        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1792132171/chatify_logo_light_jinudp.png" alt="Chatify Air Logo" />
         <h1>Chatify Air</h1>
       </div>
       <p class="welcome-text">Welcome! Connect to your BlueBubbles Server to continue.</p>
-
       <div class="input-group">
         <label>Server URL</label>
         <input id="usernameInput" placeholder="https://your-server.ngrok.io" autocomplete="off" spellcheck="false" />
       </div>
-
       <div class="input-group">
         <label>Password</label>
         <input id="pinInput" placeholder="BlueBubbles server password" type="password" autocomplete="current-password" />
       </div>
-
       <div style="margin: 10px 0; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 10px; max-height: 60px; overflow-y: auto; background: var(--secondary-background); font-size: 9px; color: var(--text-color); opacity: 0.7;">
         <strong style="font-size:10px;">Terms:</strong> By clicking Enter Chat you agree to the Chatify Air terms of use. Chatify Air connects to your self-hosted BlueBubbles server and provides no warranty, as-is. You are responsible for the content sent through your server.
       </div>
-
       <button id="pinBtn">Enter Chat</button>
     </div>
-
     <div class="pin-right">
       <div class="brand-content">
         <h2>iMessage, anywhere</h2>
         <p class="tagline">Powered by BlueBubbles + Chatify Air</p>
-        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1785015423/download_2_zo0yb2.png"
+        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1792132171/chatify_logo_light_jinudp.png"
              alt="Chatify Air" style="width: 299px; height: auto; margin-top: 10px; margin-left: -15px;" />
       </div>
       <div class="brand-footer">© 2026 Chatify Air • v2.0</div>
@@ -586,23 +566,16 @@ a { color: #0a66c2; text-decoration: underline; }
   </div>
 </div>
 
-<!-- ============================================================
-     MAIN APP
-     ============================================================ -->
 <div id="chatApp" aria-hidden="true">
   <header id="mainHeader">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <img src="https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png" alt="Chatify Air Logo" style="height: 30px; width: auto;" />
+      <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1792132171/chatify_logo_light_jinudp.png" alt="Chatify Air Logo" style="height: 30px; width: auto;" />
       <span>Chatify Air</span>
     </div>
-
     <div id="serverPanel">
-      <select id="serverSelect">
-        <option value="">Loading chats...</option>
-      </select>
+      <select id="serverSelect"><option value="">Loading chats...</option></select>
       <button id="createServerBtn">New Chat</button>
     </div>
-
     <div class="header-actions">
       <button id="profileBtn" class="button-clear" title="Set profile picture">Profile</button>
       <button id="toggleThemeBtn" class="button-clear" title="Toggle theme">Toggle Theme</button>
@@ -615,9 +588,11 @@ a { color: #0a66c2; text-decoration: underline; }
   <div id="loading"><div class="loader"></div></div>
   <div id="chat" role="log" aria-live="polite"></div>
 
-  <!-- Reply-in-progress indicator (only visible while composing a reply) -->
   <div class="reply-indicator" id="replyIndicator">
-    <span id="replyIndicatorText">Replying…</span>
+    <div class="reply-indicator-content">
+      <div class="reply-indicator-label">Replying to <strong id="replyIndicatorSender">…</strong></div>
+      <div class="reply-indicator-text" id="replyIndicatorText">…</div>
+    </div>
     <button id="cancelReplyBtn" title="Cancel reply">✕</button>
   </div>
 
@@ -631,18 +606,17 @@ a { color: #0a66c2; text-decoration: underline; }
 <style>
   #sendBtn {
     display: flex; align-items: center; justify-content: center;
-    background: rgba(69, 190, 74, 0.8); border: none; color: white;
+    background: rgba(33, 138, 255, 0.8); border: none; color: white;
     font-size: 1.5rem; padding: 0.8rem;
     width: 3rem; height: 3rem; border-radius: 50%;
-    cursor: pointer; box-shadow: 0 4px 15px rgba(69, 190, 74, 0.2);
+    cursor: pointer; box-shadow: 0 4px 15px rgba(33, 138, 255, 0.2);
     transition: all 0.25s ease;
   }
-  #sendBtn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(69, 190, 74, 0.7); }
-  #sendBtn:active { transform: scale(0.94); box-shadow: 0 2px 10px rgba(69, 190, 74, 0.4); }
+  #sendBtn:hover { transform: scale(1.15); box-shadow: 0 7px 25px rgba(33, 138, 255, 0.7); }
+  #sendBtn:active { transform: scale(0.94); box-shadow: 0 2px 10px rgba(33, 138, 255, 0.4); }
 </style>
 </div>
 
-<!-- Contacts Modal -->
 <div id="usersModal" class="profile-modal">
   <div class="profile-modal-content" style="max-width: 500px; max-height: 80vh;">
     <h3>👥 Contacts</h3>
@@ -659,7 +633,6 @@ a { color: #0a66c2; text-decoration: underline; }
   </div>
 </div>
 
-<!-- Profile Picture Modal -->
 <div id="profileModal" class="profile-modal">
   <div class="profile-modal-content">
     <h3>Set Profile Picture</h3>
@@ -674,7 +647,6 @@ a { color: #0a66c2; text-decoration: underline; }
   </div>
 </div>
 
-<!-- GIF Keyboard -->
 <div id="gifKeyboard" class="gif-keyboard">
   <div class="gif-keyboard-header">
     <h4>🎬 GIFs</h4>
@@ -691,33 +663,26 @@ a { color: #0a66c2; text-decoration: underline; }
 <script>
 /* ============================================================
    CHATIFY AIR — BlueBubbles backend
-   Changes in this revision:
-     1. Messages show contact FIRST + LAST name (via findContactName)
-        instead of the raw phone number / address.
-     2. Read/Delivered indicator is text-only (no checkmarks) and
-        flips automatically to "Read" once dateRead appears on the
-        message returned by BlueBubbles.
-     3. Reply button restored; replies send selectedMessageGuid +
-        partIndex to BlueBubbles so they're real iMessage replies,
-        and rendered with a quoted preview.
-   Nothing else in the UI has been touched.
+   Fixed in this revision:
+     • Message animation no longer replays on every re-render.
+       Only the FIRST render of a bubble gets the animation,
+       tracked via animatedGuids.
+     • Post-send reload only fires if Socket.IO isn't connected.
+     • Socket.IO "updated-message" for messages already in the
+       list just updates the timestamp suffix — no full rebuild.
    ============================================================ */
 
-/* ---------- Intro animation ---------- */
 (function playIntro() {
   const intro = document.getElementById('intro');
   const whiteOverlay = document.getElementById('whiteOverlay');
   const chatifyText = document.getElementById('chatifyText');
   if (!intro || !whiteOverlay) return;
-
   const currentTheme = localStorage.getItem('theme') ||
     (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   const overlayColor = currentTheme === 'dark' ? '#333333' : 'white';
-
   intro.style.display = 'flex';
   whiteOverlay.style.display = 'block';
   whiteOverlay.style.backgroundColor = overlayColor;
-
   setTimeout(() => {
     chatifyText.classList.add('flash');
     setTimeout(() => {
@@ -728,7 +693,6 @@ a { color: #0a66c2; text-decoration: underline; }
   }, 1000);
 })();
 
-/* ---------- Theme ---------- */
 const savedTheme = localStorage.getItem('theme');
 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 document.documentElement.setAttribute('data-theme', savedTheme || (prefersDark ? 'dark' : 'light'));
@@ -760,16 +724,28 @@ let isTabActive = !document.hidden;
 let chats = [];
 let contacts = [];
 
-const localReactions = {};
+let serverMessageCount = 0;
+let hasMoreHistory = true;
+let isLoadingHistory = false;
 
+const localReactions = {};
 const notifiedGuids = new Set();
 const lastSeenGuids = new Map();
 let notificationPermissionGranted = false;
-
 const pendingSends = [];
 
-// Currently-armed reply target (guid of the message being replied to)
+/* Which message guids have already had their entrance animation — 
+   this prevents the "animation replays 5x" bug on every rebuild. */
+const animatedGuids = new Set();
+
 let replyToGuid = null;
+
+const failedAvatarAddresses = new Set();
+const resolvedAvatarCache = new Map();
+
+let socket = null;
+let socketReconnectAttempts = 0;
+const MAX_SOCKET_RECONNECT = 5;
 
 const pinOverlay = document.getElementById('pinOverlay');
 const pinBtn = document.getElementById('pinBtn');
@@ -784,6 +760,7 @@ const loadingDiv = document.getElementById('loading');
 const serverSelect = document.getElementById('serverSelect');
 const replyIndicator = document.getElementById('replyIndicator');
 const replyIndicatorText = document.getElementById('replyIndicatorText');
+const replyIndicatorSender = document.getElementById('replyIndicatorSender');
 const cancelReplyBtn = document.getElementById('cancelReplyBtn');
 
 document.addEventListener('visibilitychange', () => { isTabActive = !document.hidden; });
@@ -820,6 +797,108 @@ function showNotifyBanner(text, duration = 5000) {
   notifyBanner._timer = setTimeout(() => { notifyBanner.style.display = 'none'; }, duration);
 }
 
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    try { return crypto.randomUUID(); } catch (e) {}
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/* ============================================================
+   AVATAR HELPERS — macOS Contacts via BlueBubbles
+   ============================================================ */
+function getInitials(name) {
+  if (!name || name === 'Unknown') return '?';
+  if (name === 'You') return 'ME';
+  if (/^[+\d]/.test(name) || name.includes('@')) {
+    const cleaned = name.replace(/[^a-zA-Z0-9]/g, '');
+    return (cleaned.slice(0, 2) || '?').toUpperCase();
+  }
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return (name.trim().slice(0, 2) || '?').toUpperCase();
+}
+
+function makeInitialsAvatar(name) {
+  const initials = getInitials(name);
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">' +
+      '<rect width="80" height="80" rx="40" fill="#9e9e9e"/>' +
+      '<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" ' +
+        'font-family="-apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif" ' +
+        'font-size="30" font-weight="600" fill="#ffffff">' + escapeHtml(initials) + '</text>' +
+    '</svg>';
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+function findContactByAddress(address) {
+  if (!address) return null;
+  for (const c of contacts) {
+    if (c.phoneNumbers && c.phoneNumbers.some(p => p.address === address)) return c;
+    if (c.emails && c.emails.some(e => e.address === address)) return c;
+  }
+  return null;
+}
+
+function getAvatarUrl(address, isMine) {
+  if (isMine) {
+    return userProfiles['__me__'] || makeInitialsAvatar('You');
+  }
+  if (!address) return makeInitialsAvatar('?');
+  if (userProfiles[address]) return userProfiles[address];
+  if (resolvedAvatarCache.has(address)) return resolvedAvatarCache.get(address);
+  if (failedAvatarAddresses.has(address)) {
+    const initials = makeInitialsAvatar(findContactName(address) || address);
+    resolvedAvatarCache.set(address, initials);
+    return initials;
+  }
+  const contact = findContactByAddress(address);
+  const rawAvatar = contact && typeof contact.avatar === 'string' ? contact.avatar : '';
+  if (rawAvatar && rawAvatar.length > 0) {
+    if (rawAvatar.length > 100 && !rawAvatar.startsWith('/') && !/^https?:\/\//i.test(rawAvatar)) {
+      const dataUrl = 'data:image/png;base64,' + rawAvatar;
+      resolvedAvatarCache.set(address, dataUrl);
+      return dataUrl;
+    }
+    if (/^https?:\/\//i.test(rawAvatar)) {
+      resolvedAvatarCache.set(address, rawAvatar);
+      return rawAvatar;
+    }
+    if (rawAvatar.startsWith('/') && !rawAvatar.startsWith('/api/v1/contact/avatar')) {
+      const base = BB_BASE_URL.replace(/\/+$/, '');
+      const sep = rawAvatar.includes('?') ? '&' : '?';
+      const url = `${base}${rawAvatar}${sep}password=${encodeURIComponent(BB_PASSWORD)}`;
+      resolvedAvatarCache.set(address, url);
+      return url;
+    }
+  }
+  const initials = makeInitialsAvatar(findContactName(address) || address);
+  resolvedAvatarCache.set(address, initials);
+  return initials;
+}
+
+window.__avatarError = function (img) {
+  if (!img) return;
+  const addr = img.dataset ? img.dataset.address : null;
+  if (addr) {
+    failedAvatarAddresses.add(addr);
+    const initials = makeInitialsAvatar(addr);
+    resolvedAvatarCache.set(addr, initials);
+  }
+  img.onerror = null;
+  if (img.dataset && img.dataset.fallback) {
+    img.src = img.dataset.fallback;
+  } else {
+    img.src = makeInitialsAvatar('?');
+  }
+};
+
 /* ---------- BlueBubbles fetch helpers ---------- */
 function bbUrl(path) {
   const base = BB_BASE_URL.replace(/\/+$/, '');
@@ -834,7 +913,8 @@ async function bbFetch(path, opts = {}) {
   });
   const json = await resp.json().catch(() => ({}));
   if (!resp.ok || (json.status && json.status >= 400)) {
-    throw new Error(json?.error?.error || json?.message || `HTTP ${resp.status}`);
+    const serverErr = json?.error?.error || json?.error?.message || json?.message || `HTTP ${resp.status}`;
+    throw new Error(serverErr);
   }
   return json;
 }
@@ -867,7 +947,6 @@ function playPingSound() {
   } catch (e) {}
 }
 
-/* ---------- Notification permission ---------- */
 async function ensureNotificationPermission() {
   if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') { notificationPermissionGranted = true; return true; }
@@ -885,7 +964,7 @@ function fireBrowserNotification(title, body, tag) {
   try {
     const n = new Notification(title, {
       body,
-      icon: 'https://res.cloudinary.com/dceqg5cky/image/upload/SDG_log-removebg-preview_bslq5d.png',
+      icon: 'https://res.cloudinary.com/dceqg5cky/image/upload/v1792132171/chatify_logo_light_jinudp.png',
       tag: tag || 'chatify-air',
       silent: true
     });
@@ -906,18 +985,12 @@ function markNotified(guid) {
   return true;
 }
 
-/* ============================================================
-   CONTACT NAME RESOLUTION
-   - Uses the loaded /contact list to find First + Last name
-   - Falls back to displayName, then the raw address
-   ============================================================ */
 function findContactName(address) {
   if (!address) return '';
   for (const c of contacts) {
     const matchesPhone = c.phoneNumbers && c.phoneNumbers.some(p => p.address === address);
     const matchesEmail = c.emails && c.emails.some(e => e.address === address);
     if (matchesPhone || matchesEmail) {
-      // Prefer firstName + lastName (iMessage style)
       if (c.firstName && c.lastName) return `${c.firstName} ${c.lastName}`;
       if (c.firstName) return c.firstName;
       if (c.lastName) return c.lastName;
@@ -944,7 +1017,6 @@ pinBtn.addEventListener('click', async () => {
 
   BB_BASE_URL = url.replace(/\/+$/, '');
   BB_PASSWORD = pass;
-
   pinBtn.textContent = 'Connecting…';
   pinBtn.disabled = true;
 
@@ -953,7 +1025,6 @@ pinBtn.addEventListener('click', async () => {
 
   try {
     await bbFetch('/ping');
-
     let serverName = 'BlueBubbles';
     try {
       const info = await bbFetch('/server/info');
@@ -962,7 +1033,6 @@ pinBtn.addEventListener('click', async () => {
 
     localStorage.setItem('bb_url', BB_BASE_URL);
     localStorage.setItem('bb_pass', BB_PASSWORD);
-
     bbConnected = true;
     showNotifyBanner(`✅ Connected to ${serverName}`);
 
@@ -975,12 +1045,9 @@ pinBtn.addEventListener('click', async () => {
     setTimeout(async () => {
       pinOverlay.style.display = 'none';
       chatApp.style.display = 'flex';
-
-      // Load contacts FIRST so name lookups work in the initial render
       await loadContacts();
       await loadChats();
-      startPolling();
-
+      startSocket();
       setTimeout(() => {
         transitionOverlay.classList.remove('expand');
         transitionOverlay.style.transform = 'scale(0)';
@@ -1003,19 +1070,17 @@ pinBtn.addEventListener('click', async () => {
   if (p) pinInput.value = p;
 })();
 
-/* ---------- Contacts (loaded early so names resolve everywhere) ---------- */
 async function loadContacts() {
   try {
     const res = await bbFetch('/contact');
     contacts = res.data || [];
-    console.log(`📇 Loaded ${contacts.length} contacts`);
+    console.log(`📇 Loaded ${contacts.length} contacts from macOS Contacts bridge`);
   } catch (e) {
     console.warn('Contacts load failed:', e.message);
     contacts = [];
   }
 }
 
-/* ---------- Chats ---------- */
 async function loadChats() {
   loadingDiv.style.display = 'flex';
   try {
@@ -1055,7 +1120,6 @@ async function loadChats() {
 }
 
 function getChatName(chat) {
-  // Prefer contacts name over raw address in the dropdown too
   if (chat.displayName) return chat.displayName;
   if (chat.chatIdentifier) {
     const byContact = findContactName(chat.chatIdentifier);
@@ -1101,17 +1165,19 @@ document.getElementById('createServerBtn').addEventListener('click', () => {
   loadUsersList('');
 });
 
-/* ---------- Open chat ---------- */
 async function openChat(guid, name) {
   currentServer = guid;
   messages = [];
   displayed.clear();
+  animatedGuids.clear();
+  serverMessageCount = 0;
+  hasMoreHistory = true;
+  isLoadingHistory = false;
   cancelReply();
   chatDiv.innerHTML = '<div class="empty-state"><div class="loader" style="width:36px;height:36px;border:4px solid var(--border-color);border-top-color:var(--button-background);border-radius:50%;animation:spin 0.8s linear infinite;"></div></div>';
   await loadMessages(guid);
 }
 
-/* ---------- Load messages ---------- */
 async function loadMessages(guid) {
   try {
     const res = await bbFetch(`/chat/${encodeURIComponent(guid)}/message?limit=100&offset=0&sort=DESC`);
@@ -1121,13 +1187,59 @@ async function loadMessages(guid) {
       if (m && m.guid) notifiedGuids.add(m.guid);
     }
 
+    serverMessageCount = serverMsgs.length;
+    hasMoreHistory = serverMsgs.length >= 100;
+
     const combined = combineWithPending(serverMsgs, guid);
     messages = combined;
-    clearChatAndRenderAll();
-    chatDiv.scrollTop = chatDiv.scrollHeight;
+    clearChatAndRenderAll(true);
   } catch (e) {
     console.error('loadMessages failed:', e);
     chatDiv.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div><p>Failed to load messages:<br>${escapeHtml(e.message)}</p></div>`;
+  }
+}
+
+async function loadMoreHistory() {
+  if (isLoadingHistory || !hasMoreHistory || !currentServer) return;
+  isLoadingHistory = true;
+
+  const loaderEl = document.createElement('div');
+  loaderEl.className = 'history-loading';
+  loaderEl.textContent = '↻ Loading older messages…';
+  chatDiv.insertBefore(loaderEl, chatDiv.firstChild);
+
+  try {
+    const res = await bbFetch(`/chat/${encodeURIComponent(currentServer)}/message?limit=100&offset=${serverMessageCount}&sort=DESC`);
+    const older = (res.data || []).slice().reverse();
+    const newMsgs = older.filter(m => m && m.guid && !displayed.has(m.guid));
+
+    if (!newMsgs.length) {
+      hasMoreHistory = false;
+      loaderEl.remove();
+      return;
+    }
+
+    const prevScrollHeight = chatDiv.scrollHeight;
+    const prevScrollTop = chatDiv.scrollTop;
+
+    messages = newMsgs.concat(messages);
+    serverMessageCount += newMsgs.length;
+
+    chatDiv.innerHTML = '';
+    displayed.clear();
+    for (const m of messages) renderOneMessage(m, false);
+
+    const newScrollHeight = chatDiv.scrollHeight;
+    chatDiv.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+
+    if (older.length < 100) hasMoreHistory = false;
+  } catch (e) {
+    console.error('loadMoreHistory failed:', e);
+    loaderEl.textContent = '⚠️ Could not load older messages';
+    setTimeout(() => loaderEl.remove(), 1500);
+  } finally {
+    isLoadingHistory = false;
+    if (loaderEl.parentNode && loaderEl.textContent.startsWith('↻')) loaderEl.remove();
   }
 }
 
@@ -1137,8 +1249,7 @@ function combineWithPending(serverMsgs, guid) {
     const p = pendingSends[i];
     if (p.chatGuid !== guid) continue;
     const match = serverMsgs.find(m =>
-      m.isFromMe &&
-      (m.text || '').trim() === p.text.trim()
+      m.isFromMe && (m.text || '').trim() === p.text.trim()
     );
     if (match) { pendingSends.splice(i, 1); }
     else if (now - p.sentAt > 15000) { pendingSends.splice(i, 1); }
@@ -1157,12 +1268,15 @@ function combineWithPending(serverMsgs, guid) {
   return serverMsgs.concat(stillPending);
 }
 
-/* ---------- Render ---------- */
-function clearChatAndRenderAll() {
+/* ============================================================
+   RENDER — the animation is only applied when a guid renders
+   for the very first time.
+   ============================================================ */
+function clearChatAndRenderAll(scrollToBottom = true) {
   chatDiv.innerHTML = '';
   displayed.clear();
   for (const m of messages) renderOneMessage(m, false);
-  chatDiv.scrollTop = chatDiv.scrollHeight;
+  if (scrollToBottom) chatDiv.scrollTop = chatDiv.scrollHeight;
 }
 
 function renderOneMessage(msg, live = false) {
@@ -1174,11 +1288,19 @@ function renderOneMessage(msg, live = false) {
   el.className = 'message ' + (isMine ? 'myMessage' : 'otherMessage');
   el.dataset.id = msg.guid;
 
-  // Sender name: resolve via contacts (First + Last)
+  // Only animate the FIRST time a guid shows up
+  if (!animatedGuids.has(msg.guid)) {
+    el.classList.add('message-new');
+    animatedGuids.add(msg.guid);
+  }
+
   const senderAddr = (msg.handle && msg.handle.address) || '';
   const displayName = getMessageSenderName(msg);
 
-  const pic = userProfiles[senderAddr] || 'https://www.thisiscolossal.com/wp-content/uploads/2024/01/spherewave.gif';
+  const avatarUrl = getAvatarUrl(senderAddr, isMine);
+  const fallbackAvatar = isMine
+    ? (userProfiles['__me__'] || makeInitialsAvatar('You'))
+    : makeInitialsAvatar(displayName);
 
   const text = msg.text || '';
   const content = text.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp)$/i)
@@ -1189,41 +1311,30 @@ function renderOneMessage(msg, live = false) {
 
   const timestamp = formatTs(msg.dateCreated);
 
-  // ==========================================================
-  // iMessage-style Delivered / Read (no checkmarks).
-  // Auto-updates when pollTick reloads the message with
-  // dateDelivered / dateRead set by BlueBubbles.
-  // ==========================================================
   let statusSuffix = '';
   if (isMine && !msg._pending) {
-    if (msg.dateRead) {
-      statusSuffix = ' · Read';
-    } else if (msg.dateDelivered) {
-      statusSuffix = ' · Delivered';
-    }
+    if (msg.dateRead) statusSuffix = ' · Read';
+    else if (msg.dateDelivered) statusSuffix = ' · Delivered';
   }
 
-  // ==========================================================
-  // Reply preview — quoted snippet of the message being replied to
-  // ==========================================================
   let replyPreviewHtml = '';
   if (msg.threadOriginatorGuid) {
     const original = messages.find(m => m.guid === msg.threadOriginatorGuid);
     if (original) {
       const origSender = getMessageSenderName(original);
-      const origText = (original.text || '').slice(0, 120);
+      const fullOrig = original.text || '';
+      const origText = fullOrig.slice(0, 120);
       replyPreviewHtml = `
-        <div class="reply-preview">
+        <div class="reply-preview" data-target="${escapeHtml(msg.threadOriginatorGuid)}" title="Click to jump to this message">
           <strong>${escapeHtml(origSender)}</strong>
-          <span>${escapeHtml(origText)}${(original.text || '').length > 120 ? '…' : ''}</span>
+          <span>${escapeHtml(origText)}${fullOrig.length > 120 ? '…' : ''}</span>
         </div>
       `;
     } else {
-      replyPreviewHtml = `<div class="reply-preview"><strong>Earlier message</strong></div>`;
+      replyPreviewHtml = `<div class="reply-preview"><strong>Earlier message</strong><span>Original not loaded — scroll up to view</span></div>`;
     }
   }
 
-  // Reactions
   const reactions = localReactions[msg.guid] || {};
   let reactionHtml = '';
   for (const emoji in reactions) {
@@ -1233,12 +1344,13 @@ function renderOneMessage(msg, live = false) {
   }
   const reactionsHtml = reactionHtml ? `<div class="reactions">${reactionHtml}</div>` : '';
 
-  // Reply button (restored)
-  const replyButton = `<button class="reply-btn" data-message="${msg.guid}">↳ Reply</button>`;
+  const replyButton = msg._pending
+    ? ''
+    : `<button class="reply-btn" data-message="${escapeHtml(msg.guid)}">↳ Reply</button>`;
 
   el.innerHTML = `
     <div style="display: flex; align-items: flex-start; gap: 10px;">
-        <img src="${escapeHtml(pic)}" alt="pfp" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;">
+        <img src="${escapeHtml(avatarUrl)}" alt="pfp" data-address="${escapeHtml(senderAddr)}" data-fallback="${escapeHtml(fallbackAvatar)}" onerror="__avatarError(this)" style="width:30px;height:30px;border-radius:50%;flex-shrink:0;object-fit:cover;background:#ccc;">
         <div style="flex: 1; min-width: 0;">
             ${replyPreviewHtml}
             <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
@@ -1248,14 +1360,13 @@ function renderOneMessage(msg, live = false) {
             <div class="timestamp">${escapeHtml(timestamp)}${statusSuffix}</div>
             ${reactionsHtml}
             ${replyButton}
-            <div class="emoji-picker-btn" data-message="${msg.guid}">😀</div>
+            <div class="emoji-picker-btn" data-message="${escapeHtml(msg.guid)}">😀</div>
         </div>
     </div>
   `;
 
   if (msg._pending) el.classList.add('sending');
 
-  // Emoji picker
   const emojiBtn = el.querySelector('.emoji-picker-btn');
   if (emojiBtn) {
     const pickerEl = document.createElement('div');
@@ -1280,7 +1391,6 @@ function renderOneMessage(msg, live = false) {
     document.addEventListener('click', () => { pickerEl.style.display = 'none'; });
   }
 
-  // Reply button handler — arms the reply target and focuses the input
   const replyBtn = el.querySelector('.reply-btn');
   if (replyBtn) {
     replyBtn.addEventListener('click', (e) => {
@@ -1289,7 +1399,23 @@ function renderOneMessage(msg, live = false) {
     });
   }
 
-  // Reaction click
+  const rp = el.querySelector('.reply-preview');
+  if (rp && rp.dataset.target) {
+    rp.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const target = document.querySelector(`.message[data-id="${CSS.escape(rp.dataset.target)}"]`);
+      if (!target) {
+        showNotifyBanner('Original message not loaded — scroll up to find it', 3000);
+        return;
+      }
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prevBg = target.style.boxShadow;
+      target.style.transition = 'box-shadow 0.4s ease';
+      target.style.boxShadow = '0 0 0 3px rgba(33, 138, 255, 0.65)';
+      setTimeout(() => { target.style.boxShadow = prevBg; }, 1200);
+    });
+  }
+
   el.querySelectorAll('.reaction').forEach(r => {
     r.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -1297,7 +1423,6 @@ function renderOneMessage(msg, live = false) {
     });
   });
 
-  // Options menu (hide)
   if (isMine) {
     const opt = document.createElement('div');
     opt.className = 'options';
@@ -1331,10 +1456,12 @@ function renderOneMessage(msg, live = false) {
 
 /* ---------- Reply arming / cancellation ---------- */
 function armReply(msg) {
+  if (!msg || msg._pending) return;
   replyToGuid = msg.guid;
   const sender = getMessageSenderName(msg);
-  const preview = (msg.text || '').slice(0, 60);
-  replyIndicatorText.textContent = `Replying to ${sender}: ${preview}${(msg.text || '').length > 60 ? '…' : ''}`;
+  const preview = (msg.text || '').slice(0, 80);
+  replyIndicatorSender.textContent = sender;
+  replyIndicatorText.textContent = preview + ((msg.text || '').length > 80 ? '…' : '');
   replyIndicator.style.display = 'flex';
   messageInput.focus();
 }
@@ -1346,7 +1473,6 @@ function cancelReply() {
 
 cancelReplyBtn.addEventListener('click', cancelReply);
 
-/* ---------- Reactions (local) ---------- */
 async function addReaction(messageId, emoji) {
   if (!localReactions[messageId]) localReactions[messageId] = {};
   const r = localReactions[messageId];
@@ -1357,16 +1483,17 @@ async function addReaction(messageId, emoji) {
     r[emoji].splice(idx, 1);
     if (!r[emoji].length) delete r[emoji];
   }
-  const msg = messages.find(m => m.guid === messageId);
-  if (msg) {
-    displayed.delete(messageId);
-    const existing = document.querySelector(`.message[data-id="${messageId}"]`);
-    if (existing) existing.remove();
-    renderOneMessage(msg, false);
-  }
+  clearChatAndRenderAll(false);
 }
 
-/* ---------- Send message (with real iMessage reply support) ---------- */
+/* ============================================================
+   SEND MESSAGE
+   - Optimistic bubble renders instantly (gets its animation once)
+   - When server responds, we replace the message in state and
+     transfer the "already animated" status to the real guid
+   - Fallback reload after send only happens if Socket.IO isn't
+     connected, otherwise the socket event will handle it
+   ============================================================ */
 async function sendMessage() {
   const text = (messageInput.value || '').trim();
   if (!text || !currentServer) return;
@@ -1376,13 +1503,22 @@ async function sendMessage() {
   const replyGuid = replyToGuid;
   cancelReply();
 
-  const tempGuid = 'temp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+  let finalText = text;
+  if (replyGuid) {
+    const original = messages.find(m => m.guid === replyGuid);
+    if (original) {
+      const originalText = (original.text || '').slice(0, 80);
+      finalText = `replied to "${originalText}" : ${text}`;
+    }
+  }
+
+  const tempGuid = generateUUID();
   const sentAt = Date.now();
-  pendingSends.push({ tempGuid, text, chatGuid: currentServer, sentAt, replyToGuid: replyGuid });
+  pendingSends.push({ tempGuid, text: finalText, chatGuid: currentServer, sentAt, replyToGuid: replyGuid });
 
   const optimistic = {
     guid: tempGuid,
-    text,
+    text: finalText,
     isFromMe: true,
     dateCreated: new Date(sentAt).toISOString(),
     handle: { address: '' },
@@ -1390,48 +1526,201 @@ async function sendMessage() {
     _pending: true
   };
   messages.push(optimistic);
-  renderOneMessage(optimistic, false);
+  renderOneMessage(optimistic, false);          // will animate ONCE
   chatDiv.scrollTop = chatDiv.scrollHeight;
 
+  const basePayload = {
+    chatGuid: currentServer,
+    tempGuid: tempGuid,
+    message: finalText,
+    method: 'apple-script'
+  };
+
+  let sendErr = null;
+  let sentData = null;
+
   try {
-    const payload = {
-      chatGuid: currentServer,
-      message: text,
-      method: 'apple-script',
-      tempGuid: tempGuid
-    };
-    if (replyGuid) {
-      payload.selectedMessageGuid = replyGuid;
-      payload.partIndex = 0;
-    }
-
-    await bbFetch('/message/text', {
+    const resp = await bbFetch('/message/text', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(basePayload)
     });
-
-    setTimeout(async () => {
-      if (currentServer) await loadMessages(currentServer);
-    }, 800);
+    sentData = resp.data || null;
   } catch (err) {
-    console.error('sendMessage failed:', err);
-    showNotifyBanner('❌ Failed to send: ' + err.message);
+    sendErr = err;
+  }
+
+  if (sendErr) {
+    console.error('sendMessage failed:', sendErr);
+    showNotifyBanner('❌ Failed to send: ' + sendErr.message);
     const idx = pendingSends.findIndex(p => p.tempGuid === tempGuid);
     if (idx >= 0) pendingSends.splice(idx, 1);
     messages = messages.filter(m => m.guid !== tempGuid);
-    clearChatAndRenderAll();
+    animatedGuids.delete(tempGuid);
+    clearChatAndRenderAll(true);
+    return;
+  }
+
+  if (sentData && sentData.guid) {
+    // Transfer the "already animated" status so the real message
+    // doesn't animate a second time.
+    animatedGuids.add(sentData.guid);
+    const idx = messages.findIndex(m => m.guid === tempGuid);
+    if (idx >= 0) {
+      messages[idx] = Object.assign({}, optimistic, sentData, { _pending: false, isFromMe: true });
+    }
+    const pIdx = pendingSends.findIndex(p => p.tempGuid === tempGuid);
+    if (pIdx >= 0) pendingSends.splice(pIdx, 1);
+
+    // In-place update: replace the DOM node so no other bubbles rebuild
+    const existing = chatDiv.querySelector(`.message[data-id="${CSS.escape(tempGuid)}"]`);
+    if (existing) {
+      existing.dataset.id = sentData.guid;
+      existing.classList.remove('sending');
+    }
+  }
+
+  // Only reload from REST if Socket.IO isn't handling real-time
+  if (!socket || !socket.connected) {
+    setTimeout(async () => {
+      if (currentServer) await loadMessages(currentServer);
+    }, 900);
   }
 }
+
 sendBtn.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
-/* ---------- Polling & Notifications ---------- */
+/* ---------- REAL-TIME: Socket.IO ---------- */
+function startSocket() {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+
+  if (typeof io === 'undefined') {
+    console.warn('Socket.IO not loaded, falling back to polling');
+    startPolling();
+    return;
+  }
+
+  try {
+    socket = io(BB_BASE_URL, {
+      query: { password: BB_PASSWORD },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      reconnectionAttempts: MAX_SOCKET_RECONNECT
+    });
+
+    socket.on('connect', () => {
+      console.log('🔌 Socket.IO connected — real-time mode active');
+      socketReconnectAttempts = 0;
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    });
+
+    socket.on('new-message', (message) => {
+      handleSocketMessage(message, 'new');
+    });
+
+    socket.on('updated-message', (message) => {
+      handleSocketMessage(message, 'updated');
+    });
+
+    socket.on('typing-indicator', (data) => {
+      console.log('⌨️ Typing indicator:', data);
+    });
+
+    socket.on('read-receipt', (data) => {
+      if (data && data.chatGuid === currentServer) {
+        if (_socketReloadTimer) clearTimeout(_socketReloadTimer);
+        _socketReloadTimer = setTimeout(() => {
+          _socketReloadTimer = null;
+          if (currentServer) loadMessages(currentServer);
+        }, 400);
+      }
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Socket.IO disconnected:', reason);
+      if (reason === 'io server disconnect') socket.connect();
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('Socket.IO connection error:', err.message);
+      socketReconnectAttempts++;
+      if (socketReconnectAttempts >= MAX_SOCKET_RECONNECT) {
+        console.warn('Socket.IO failed after max attempts — falling back to polling');
+        socket.disconnect();
+        socket = null;
+        startPolling();
+      }
+    });
+  } catch (e) {
+    console.error('Socket.IO setup failed:', e);
+    startPolling();
+  }
+}
+
+let _socketReloadTimer = null;
+
+/**
+ * Handle a socket event.
+ *  - "new"     → full reload (something new needs to be rendered)
+ *  - "updated" → if the guid is already rendered, just patch the
+ *                timestamp; otherwise do a full reload.
+ */
+function handleSocketMessage(msg, kind) {
+  if (!msg || !msg.guid) return;
+  const chatGuid = msg.chatGuid || (msg.chats && msg.chats[0] && msg.chats[0].guid);
+  if (chatGuid) lastSeenGuids.set(chatGuid, msg.guid);
+
+  if (chatGuid === currentServer) {
+    if (kind === 'updated' && displayed.has(msg.guid)) {
+      // Just patch the timestamp line in place — no rebuild, no animation.
+      const el = chatDiv.querySelector(`.message[data-id="${CSS.escape(msg.guid)}"]`);
+      if (el) {
+        const tsEl = el.querySelector('.timestamp');
+        if (tsEl) {
+          const ts = formatTs(msg.dateCreated);
+          let statusSuffix = '';
+          if (msg.isFromMe) {
+            if (msg.dateRead) statusSuffix = ' · Read';
+            else if (msg.dateDelivered) statusSuffix = ' · Delivered';
+          }
+          tsEl.textContent = ts + statusSuffix;
+        }
+      }
+      // Update stored message state
+      const idx = messages.findIndex(m => m.guid === msg.guid);
+      if (idx >= 0) messages[idx] = Object.assign({}, messages[idx], msg);
+      return;
+    }
+
+    if (_socketReloadTimer) clearTimeout(_socketReloadTimer);
+    _socketReloadTimer = setTimeout(() => {
+      _socketReloadTimer = null;
+      if (currentServer) loadMessages(currentServer);
+    }, 400);
+    return;
+  }
+
+  if (!msg.isFromMe && markNotified(msg.guid)) {
+    notifyAboutNewMessage({ guid: chatGuid, lastMessage: msg });
+  }
+}
+
+/* ---------- Polling fallback (only if socket fails) ---------- */
 let pollTimer = null;
 function startPolling() {
   if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(pollTick, 4000);
+  console.log('🔄 Polling fallback active (5 s interval)');
+  pollTimer = setInterval(pollTick, 5000);
 }
 
 async function pollTick() {
@@ -1451,17 +1740,13 @@ async function pollTick() {
     for (const chat of newChats) {
       const last = chat.lastMessage;
       if (!last || !last.guid) continue;
-
       const prevGuid = lastSeenGuids.get(chat.guid);
       if (prevGuid === last.guid) continue;
-
       const wasKnown = prevGuid !== undefined;
       lastSeenGuids.set(chat.guid, last.guid);
-
       if (!wasKnown) continue;
       if (last.isFromMe) continue;
       if (!markNotified(last.guid)) continue;
-
       notifyAboutNewMessage(chat);
     }
 
@@ -1475,27 +1760,24 @@ async function pollTick() {
     try {
       const res = await bbFetch(`/chat/${encodeURIComponent(currentServer)}/message?limit=100&offset=0&sort=DESC`);
       const serverMsgs = (res.data || []).slice().reverse();
+      for (const m of serverMsgs) { if (m && m.guid) notifiedGuids.add(m.guid); }
 
-      for (const m of serverMsgs) {
-        if (m && m.guid) notifiedGuids.add(m.guid);
-      }
+      if (serverMessageCount <= serverMsgs.length + 10) {
+        const combined = combineWithPending(serverMsgs, currentServer);
+        const oldSig = messages.map(m =>
+          `${m.guid}:${m.dateDelivered ? 1 : 0}:${m.dateRead ? 1 : 0}`
+        ).join('|');
+        const newSig = combined.map(m =>
+          `${m.guid}:${m.dateDelivered ? 1 : 0}:${m.dateRead ? 1 : 0}`
+        ).join('|');
 
-      const combined = combineWithPending(serverMsgs, currentServer);
-
-      // Compare not just GUIDs but also the read/delivered state so
-      // the timestamp suffix updates from "Delivered" → "Read" in place.
-      const oldSig = messages.map(m =>
-        `${m.guid}:${m.dateDelivered ? 1 : 0}:${m.dateRead ? 1 : 0}`
-      ).join('|');
-      const newSig = combined.map(m =>
-        `${m.guid}:${m.dateDelivered ? 1 : 0}:${m.dateRead ? 1 : 0}`
-      ).join('|');
-
-      if (oldSig !== newSig) {
-        const wasAtBottom = chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight < 80;
-        messages = combined;
-        clearChatAndRenderAll();
-        if (wasAtBottom) chatDiv.scrollTop = chatDiv.scrollHeight;
+        if (oldSig !== newSig) {
+          const wasAtBottom = chatDiv.scrollHeight - chatDiv.scrollTop - chatDiv.clientHeight < 80;
+          const olderLoaded = messages.filter(m => !m._pending && !serverMsgs.some(s => s.guid === m.guid));
+          messages = olderLoaded.concat(combined);
+          serverMessageCount = Math.max(serverMessageCount, serverMsgs.length);
+          clearChatAndRenderAll(wasAtBottom);
+        }
       }
     } catch (e) { /* ignore */ }
   }
@@ -1567,6 +1849,8 @@ async function loadUsersList(searchTerm = '') {
     else if (c.emails?.[0]?.address) name = c.emails[0].address;
 
     const addr = (c.phoneNumbers?.[0]?.address) || (c.emails?.[0]?.address) || '';
+    const avatar = getAvatarUrl(addr, false);
+    const fallback = makeInitialsAvatar(name);
 
     const div = document.createElement('div');
     div.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border-color);border-radius:10px;margin-bottom:4px;cursor:pointer;gap:12px;transition:background 0.2s;`;
@@ -1574,7 +1858,7 @@ async function loadUsersList(searchTerm = '') {
     div.onmouseleave = () => div.style.background = 'transparent';
     div.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
-        <img src="https://www.thisiscolossal.com/wp-content/uploads/2024/01/spherewave.gif" style="width:40px;height:40px;border-radius:50%;flex-shrink:0;">
+        <img src="${escapeHtml(avatar)}" data-address="${escapeHtml(addr)}" data-fallback="${escapeHtml(fallback)}" onerror="__avatarError(this)" style="width:40px;height:40px;border-radius:50%;flex-shrink:0;object-fit:cover;background:#ccc;">
         <div style="display:flex;flex-direction:column;min-width:0;flex:1;">
           <strong style="color:var(--text-color);word-break:break-word;font-size:14px;">${escapeHtml(name)}</strong>
           <span style="font-size:11px;opacity:0.6;">${escapeHtml(addr)}</span>
@@ -1613,10 +1897,7 @@ async function startChatWithAddress(address) {
     showNotifyBanner('Creating chat...');
     await bbFetch('/chat/new', {
       method: 'POST',
-      body: JSON.stringify({
-        addresses: [address],
-        method: 'apple-script'
-      })
+      body: JSON.stringify({ addresses: [address], method: 'apple-script' })
     });
 
     await loadChats();
@@ -1647,12 +1928,12 @@ document.getElementById('userSearchInput').addEventListener('input', (e) => {
   }, 250);
 });
 
-/* ---------- Profile Picture Modal ---------- */
+/* ---------- Profile Modal ---------- */
 document.getElementById('profileBtn').addEventListener('click', () => {
   const modal = document.getElementById('profileModal');
   modal.style.display = 'flex';
-  document.getElementById('profileUrlInput').value = '';
-  document.getElementById('profilePreview').src = 'https://via.placeholder.com/80';
+  document.getElementById('profileUrlInput').value = userProfiles['__me__'] || '';
+  document.getElementById('profilePreview').src = userProfiles['__me__'] || 'https://via.placeholder.com/80';
 });
 document.getElementById('cancelProfileBtn').addEventListener('click', () => {
   document.getElementById('profileModal').style.display = 'none';
@@ -1664,15 +1945,16 @@ document.getElementById('profileUrlInput').addEventListener('input', (e) => {
 document.getElementById('saveProfileBtn').addEventListener('click', () => {
   const url = document.getElementById('profileUrlInput').value.trim();
   if (!url) { showNotifyBanner('Enter a valid image URL'); return; }
-  userProfiles[currentUser.username] = url;
-  clearChatAndRenderAll();
+  userProfiles['__me__'] = url;
+  clearChatAndRenderAll(false);
   document.getElementById('profileModal').style.display = 'none';
   showNotifyBanner('✅ Profile picture updated');
 });
 
 /* ---------- Sign out ---------- */
 document.getElementById('signoutBtn').addEventListener('click', () => {
-  if (pollTimer) clearInterval(pollTimer);
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (socket) { socket.disconnect(); socket = null; }
   bbConnected = false;
   currentServer = null;
   messages = [];
@@ -1681,6 +1963,11 @@ document.getElementById('signoutBtn').addEventListener('click', () => {
   pendingSends.length = 0;
   notifiedGuids.clear();
   lastSeenGuids.clear();
+  resolvedAvatarCache.clear();
+  failedAvatarAddresses.clear();
+  animatedGuids.clear();
+  serverMessageCount = 0;
+  hasMoreHistory = true;
   cancelReply();
 
   localStorage.removeItem('bb_url');
@@ -1694,11 +1981,14 @@ document.getElementById('signoutBtn').addEventListener('click', () => {
   serverSelect.innerHTML = '<option value="">Loading chats...</option>';
 });
 
-/* ---------- Header scroll behavior (unchanged) ---------- */
+/* ---------- Header scroll + history load on scroll-up ---------- */
 const headerEl = document.querySelector('header');
 let lastScrollTop = 0;
 let scrollTimeout;
 chatDiv.addEventListener('scroll', () => {
+  if (chatDiv.scrollTop < 120 && !isLoadingHistory && hasMoreHistory) {
+    loadMoreHistory();
+  }
   if (scrollTimeout) clearTimeout(scrollTimeout);
   scrollTimeout = setTimeout(() => {
     const scrollTop = chatDiv.scrollTop;
@@ -1708,15 +1998,10 @@ chatDiv.addEventListener('scroll', () => {
     const isAtBottom = distanceFromBottom <= 50;
     const direction = scrollTop > lastScrollTop ? 'down' : 'up';
 
-    if (isAtBottom) {
-      headerEl.classList.remove('scrolled');
-    } else if (scrollTop <= 0) {
-      headerEl.classList.remove('scrolled');
-    } else if (direction === 'down') {
-      headerEl.classList.add('scrolled');
-    } else {
-      headerEl.classList.add('scrolled');
-    }
+    if (isAtBottom) headerEl.classList.remove('scrolled');
+    else if (scrollTop <= 0) headerEl.classList.remove('scrolled');
+    else if (direction === 'down') headerEl.classList.add('scrolled');
+    else headerEl.classList.add('scrolled');
     lastScrollTop = scrollTop;
   }, 50);
 });
@@ -1735,15 +2020,11 @@ headerEl.addEventListener('mouseleave', () => {
   }
 });
 
-/* ============================================================
-   BACKGROUND CUSTOMIZATION — VERBATIM from Chatify
-   ============================================================ */
+/* ---------- Background customization ---------- */
 (function () {
   'use strict';
-
   const BACKGROUND_KEY = 'chatify_chat_background';
   const IMGBB_KEY = '588cf67669e7952039431719ce76ff7d';
-
   let injected = false;
   let attempts = 0;
   const MAX_ATTEMPTS = 40;
@@ -1765,34 +2046,14 @@ headerEl.addEventListener('mouseleave', () => {
     modal.innerHTML = `
       <div class="profile-modal-content" style="max-width:480px !important;width:92% !important;padding:20px !important;">
         <h3 style="margin-top:0;">🎨 Customize Chat Background</h3>
-        <p style="font-size:12px;opacity:0.7;margin:0 0 12px 0;">
-          Set a custom background for your chat. Paste an image URL or upload an image.
-        </p>
-        <input type="text" id="backgroundUrlInput" placeholder="Enter image URL (https://...)"
-          style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);
-                 background:var(--secondary-background);color:var(--text-color);font-size:14px;
-                 box-sizing:border-box;margin-bottom:10px;" />
-        <div id="backgroundPreview"
-          style="display:none;width:100%;height:140px;border-radius:12px;
-                 border:1px solid var(--border-color);background-size:cover;
-                 background-position:center;margin-bottom:10px;"></div>
-        <button id="uploadBackgroundBtn"
-          style="width:100%;padding:10px;border-radius:12px;border:1px dashed var(--border-color);
-                 background:var(--secondary-background);color:var(--text-color);
-                 cursor:pointer;font-size:14px;margin-bottom:12px;">
-          📁 Upload Image (ImgBB)
-        </button>
+        <p style="font-size:12px;opacity:0.7;margin:0 0 12px 0;">Set a custom background for your chat. Paste an image URL or upload an image.</p>
+        <input type="text" id="backgroundUrlInput" placeholder="Enter image URL (https://...)" style="width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--border-color);background:var(--secondary-background);color:var(--text-color);font-size:14px;box-sizing:border-box;margin-bottom:10px;" />
+        <div id="backgroundPreview" style="display:none;width:100%;height:140px;border-radius:12px;border:1px solid var(--border-color);background-size:cover;background-position:center;margin-bottom:10px;"></div>
+        <button id="uploadBackgroundBtn" style="width:100%;padding:10px;border-radius:12px;border:1px dashed var(--border-color);background:var(--secondary-background);color:var(--text-color);cursor:pointer;font-size:14px;margin-bottom:12px;">📁 Upload Image (ImgBB)</button>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <button id="clearBackgroundBtn"
-            style="padding:8px 16px;border-radius:8px;border:none;background:#ccc;color:#333;
-                   cursor:pointer;font-weight:600;">Clear</button>
-          <button id="cancelBackgroundBtn"
-            style="padding:8px 16px;border-radius:8px;border:none;background:#ccc;color:#333;
-                   cursor:pointer;font-weight:600;">Cancel</button>
-          <button id="saveBackgroundBtn"
-            style="padding:8px 16px;border-radius:8px;border:none;
-                   background:var(--button-background);color:var(--button-text);
-                   cursor:pointer;font-weight:600;">Save</button>
+          <button id="clearBackgroundBtn" style="padding:8px 16px;border-radius:8px;border:none;background:#ccc;color:#333;cursor:pointer;font-weight:600;">Clear</button>
+          <button id="cancelBackgroundBtn" style="padding:8px 16px;border-radius:8px;border:none;background:#ccc;color:#333;cursor:pointer;font-weight:600;">Cancel</button>
+          <button id="saveBackgroundBtn" style="padding:8px 16px;border-radius:8px;border:none;background:var(--button-background);color:var(--button-text);cursor:pointer;font-weight:600;">Save</button>
         </div>
       </div>
     `;
@@ -1815,20 +2076,7 @@ headerEl.addEventListener('mouseleave', () => {
   function startRetrying() {
     const interval = setInterval(() => {
       if (tryInject()) { clearInterval(interval); return; }
-      if (attempts >= MAX_ATTEMPTS) {
-        clearInterval(interval);
-        if (!document.getElementById('backgroundBtn')) {
-          const btn = buildButton();
-          btn.style.cssText = `
-            position: fixed; bottom: 80px; right: 20px; z-index: 9999;
-            background: var(--button-background, #4caf50); color: white;
-            padding: 10px 16px; border-radius: 30px; border: none;
-            font-weight: 600; cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-          `;
-          document.body.appendChild(btn);
-        }
-      }
+      if (attempts >= MAX_ATTEMPTS) { clearInterval(interval); }
     }, 500);
     tryInject();
     if (injected) clearInterval(interval);
@@ -1843,15 +2091,11 @@ headerEl.addEventListener('mouseleave', () => {
     const clearBtn = document.getElementById('clearBackgroundBtn');
     const saveBtn = document.getElementById('saveBackgroundBtn');
     const chatApp = document.getElementById('chatApp');
-
     if (!modal || !input || !chatApp) return;
 
     function apply(url) {
-      if (url) {
-        chatApp.style.setProperty('background', `url('${url}') center/cover no-repeat fixed`, 'important');
-      } else {
-        chatApp.style.removeProperty('background');
-      }
+      if (url) chatApp.style.setProperty('background', `url('${url}') center/cover no-repeat fixed`, 'important');
+      else chatApp.style.removeProperty('background');
     }
 
     const saved = localStorage.getItem(BACKGROUND_KEY);
@@ -1859,13 +2103,8 @@ headerEl.addEventListener('mouseleave', () => {
 
     function updatePreview() {
       const url = input.value.trim();
-      if (url) {
-        preview.style.backgroundImage = `url('${url}')`;
-        preview.style.display = 'block';
-      } else {
-        preview.style.backgroundImage = 'none';
-        preview.style.display = 'none';
-      }
+      if (url) { preview.style.backgroundImage = `url('${url}')`; preview.style.display = 'block'; }
+      else { preview.style.backgroundImage = 'none'; preview.style.display = 'none'; }
     }
 
     document.addEventListener('click', (e) => {
@@ -1961,16 +2200,12 @@ headerEl.addEventListener('mouseleave', () => {
     wireModal();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
   window.addEventListener('load', () => tryInject());
 })();
 
-/* ---------- GIF Keyboard (unchanged) ---------- */
+/* ---------- GIF Keyboard ---------- */
 const GIPHY_API_KEY = 'zp13FWKyoD50OMLmwd3mjKcdrQrhWFms';
 const gifKeyboard = document.getElementById('gifKeyboard');
 const gifSearchInput = document.getElementById('gifSearchInput');
@@ -2021,7 +2256,7 @@ async function searchGifs(query) {
   }
 }
 
-/* ---------- Image Upload (unchanged) ---------- */
+/* ---------- Image Upload ---------- */
 const IMGBB_API_KEY = '588cf67669e7952039431719ce76ff7d';
 const imageBtn = document.getElementById('imageBtn');
 const imageFileInput = document.createElement('input');
@@ -2085,10 +2320,9 @@ imageFileInput.addEventListener('change', async (e) => {
     pinOverlay.style.display = 'none';
     chatApp.style.display = 'flex';
 
-    // Load contacts first so names resolve in the initial render
     await loadContacts();
     await loadChats();
-    startPolling();
+    startSocket();
 
     showNotifyBanner('✅ Reconnected to BlueBubbles');
   } catch (e) {
@@ -2098,7 +2332,7 @@ imageFileInput.addEventListener('change', async (e) => {
   }
 })();
 
-console.log('🚀 Chatify Air ready — contact names, iMessage-style read/delivered, real reply threading.');
+console.log('🚀 Chatify Air ready — pure #218aff blue, new logo, animation replays fixed, avatars fail-cached.');
 </script>
 </body>
 </html>
