@@ -277,6 +277,24 @@ body { overflow: hidden; }
   border-radius: 8px; padding: 6px; display: none;
   box-shadow: 0 8px 20px var(--shadow-color); z-index: 10;
 }
+
+.setup-link {
+  margin: 12px 0 16px;
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.setup-link a {
+  color: #007AFF;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.setup-link a:hover {
+  text-decoration: underline;
+}
 .options-menu button {
   display: block; background: none; border: none; padding: 6px 10px;
   width: 100%; text-align: left; cursor: pointer;
@@ -505,6 +523,9 @@ a { color: #0a66c2; text-decoration: underline; }
   opacity: 0.5; font-size: 16px; padding: 4px 8px; border-radius: 50%;
   transition: all 0.2s; flex-shrink: 0;
 }
+
+
+
 .reply-indicator button:hover { background: var(--secondary-background); opacity: 1; }
 .history-loading { text-align: center; padding: 14px; font-size: 11px; opacity: 0.55; letter-spacing: 0.4px; }
 .ghost-message { opacity: 0.55 !important; animation: ghostPulse 1.4s ease-in-out infinite; pointer-events: none; }
@@ -549,6 +570,14 @@ a { color: #0a66c2; text-decoration: underline; }
         <label>Password</label>
         <input id="pinInput" placeholder="BlueBubbles server password" type="password" autocomplete="current-password" />
       </div>
+      <div class="setup-link">
+  New to BlueBubbles?
+  <a href="https://bluebubbles.app/"
+     target="_blank"
+     rel="noopener noreferrer">
+    Set up your server ↗
+  </a>
+</div>
       <div style="margin: 10px 0; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 10px; max-height: 60px; overflow-y: auto; background: var(--secondary-background); font-size: 9px; color: var(--text-color); opacity: 0.7;">
         <strong style="font-size:10px;">Terms:</strong> By clicking Enter Chat you agree to the Chatify Air terms of use. Chatify Air connects to your self-hosted BlueBubbles server and provides no warranty, as-is. You are responsible for the content sent through your server.
       </div>
@@ -558,7 +587,7 @@ a { color: #0a66c2; text-decoration: underline; }
       <div class="brand-content">
         <h2>iMessage, anywhere</h2>
         <p class="tagline">Powered by BlueBubbles + Chatify Air</p>
-        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1792132171/chatify_logo_light_jinudp.png"
+        <img src="https://res.cloudinary.com/dceqg5cky/image/upload/v1792132820/chaitfy_air_layout_frkdqe.png"
              alt="Chatify Air" style="width: 299px; height: auto; margin-top: 10px; margin-left: -15px;" />
       </div>
       <div class="brand-footer">© 2026 Chatify Air • v2.0</div>
