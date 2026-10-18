@@ -1209,7 +1209,7 @@ async function openChat(guid, name) {
 
 async function loadMessages(guid) {
   try {
-    const res = await bbFetch(`/chat/${encodeURIComponent(guid)}/message?limit=100&offset=0&sort=DESC`);
+    const res = await bbFetch(`/chat/${encodeURIComponent(currentServer)}/message?limit=100&offset=${serverMessageCount}&sort=DESC&with=attachments`);
     const serverMsgs = (res.data || []).slice().reverse();
 
     for (const m of serverMsgs) {
@@ -1338,6 +1338,28 @@ function renderOneMessage(msg, live = false) {
         ? `<a href="${escapeHtml(text)}" target="_blank" rel="noreferrer">${escapeHtml(text)}</a>`
         : escapeHtml(text));
 
+
+        let attachmentHtml = '';
+if (msg.attachments && msg.attachments.length > 0) {
+  msg.attachments.forEach(att => {
+    if (!att || !att.guid) return;
+    const mt   = (att.mimeType || '').toLowerCase();
+    const uti  = (att.uti || '').toLowerCase();
+    const name = (att.transferName || '').toLowerCase();
+    const isImage = mt.startsWith('image/')
+      || uti.includes('image')
+      || /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(name);
+    if (isImage) {
+      const imgUrl = bbUrl(`/attachment/${att.guid}/download`);
+      attachmentHtml += `<img src="${escapeHtml(imgUrl)}" alt="image" loading="lazy" style="max-width:260px;max-height:260px;border-radius:8px;margin-top:4px;display:block;cursor:pointer;" onclick="window.open(this.src,'_blank')" onerror="this.style.display='none'" />`;
+    }
+  });
+}
+
+
+
+
+
   const timestamp = formatTs(msg.dateCreated);
 
   let statusSuffix = '';
@@ -1384,7 +1406,7 @@ function renderOneMessage(msg, live = false) {
             ${replyPreviewHtml}
             <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
                 <strong style="flex-shrink: 0;">${escapeHtml(displayName)}</strong>
-                <div style="min-width: 0;">${content}</div>
+                <div style="min-width: 0;">${attachmentHtml}${content}</div>
             </div>
             <div class="timestamp">${escapeHtml(timestamp)}${statusSuffix}</div>
             ${reactionsHtml}
@@ -2269,11 +2291,10 @@ async function searchGifs(query) {
         const item = document.createElement('div');
         item.className = 'gif-result-item';
         item.innerHTML = `<img src="${gifUrl}" alt="gif" loading="lazy" />`;
-        item.addEventListener('click', () => {
-          messageInput.value = gifUrl;
-          sendMessage();
+               item.addEventListener('click', () => {
           gifKeyboard.style.display = 'none';
           gifSearchInput.value = '';
+          sendGifAttachment(gifUrl);
         });
         gifResults.appendChild(item);
       });
@@ -2286,7 +2307,7 @@ async function searchGifs(query) {
 }
 
 /* ---------- Image Upload ---------- */
-const IMGBB_API_KEY = '588cf67669e7952039431719ce76ff7d';
+/* ---------- Image Upload (BlueBubbles native attachment) ---------- */
 const imageBtn = document.getElementById('imageBtn');
 const imageFileInput = document.createElement('input');
 imageFileInput.type = 'file';
@@ -2295,35 +2316,43 @@ imageFileInput.style.display = 'none';
 document.body.appendChild(imageFileInput);
 
 imageBtn.addEventListener('click', () => imageFileInput.click());
+
 imageFileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) { showNotifyBanner('Image too large (max 10MB)'); imageFileInput.value = ''; return; }
+  if (!file || !currentServer) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showNotifyBanner('Image too large (max 10MB)');
+    imageFileInput.value = '';
+    return;
+  }
 
   const orig = imageBtn.textContent;
   imageBtn.textContent = '⏳';
   imageBtn.disabled = true;
+
   try {
-    const reader = new FileReader();
-    const base64 = await new Promise((res, rej) => {
-      reader.onload = () => res(reader.result.split(',')[1]);
-      reader.onerror = rej;
-      reader.readAsDataURL(file);
+    const formData = new FormData();
+    formData.append('chatGuid', currentServer);
+    formData.append('name', file.name);
+    formData.append('attachment', file);
+    formData.append('method', 'apple-script');
+    formData.append('tempGuid', generateUUID());
+
+    const resp = await fetch(bbUrl('/message/attachment'), {
+      method: 'POST',
+      body: formData
     });
-    const fd = new FormData();
-    fd.append('key', IMGBB_API_KEY);
-    fd.append('image', base64);
-    const r = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
-    const j = await r.json();
-    if (j.success) {
-      messageInput.value = j.data.url;
-      sendMessage();
-      showNotifyBanner('✅ Image sent');
-    } else {
-      showNotifyBanner('❌ Upload failed');
+
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok || (json.status && json.status >= 400)) {
+      throw new Error(json?.error?.error || json?.message || `HTTP ${resp.status}`);
     }
+
+        showNotifyBanner('✅ Image sent');
+    setTimeout(() => { if (currentServer) loadMessages(currentServer); }, 800);
   } catch (err) {
-    showNotifyBanner('❌ Upload failed: ' + err.message);
+    console.error('Send attachment failed:', err);
+    showNotifyBanner('❌ Failed to send image: ' + err.message);
   } finally {
     imageBtn.textContent = orig;
     imageBtn.disabled = false;
@@ -2331,6 +2360,39 @@ imageFileInput.addEventListener('change', async (e) => {
   }
 });
 
+
+
+/* ---------- Send GIF as native attachment (like images) ---------- */
+async function sendGifAttachment(gifUrl) {
+  if (!currentServer || !gifUrl) return;
+  showNotifyBanner('⏳ Sending GIF…');
+  try {
+    const blobResp = await fetch(gifUrl, { mode: 'cors' });
+    if (!blobResp.ok) throw new Error('Could not download GIF');
+    const blob = await blobResp.blob();
+    const file = new File([blob], 'animation.gif', { type: blob.type || 'image/gif' });
+
+    const formData = new FormData();
+    formData.append('chatGuid', currentServer);
+    formData.append('name', file.name);
+    formData.append('attachment', file);
+    formData.append('method', 'apple-script');
+    formData.append('tempGuid', generateUUID());
+
+    const resp = await fetch(bbUrl('/message/attachment'), { method: 'POST', body: formData });
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok || (json.status && json.status >= 400)) {
+      throw new Error(json?.error?.error || json?.message || `HTTP ${resp.status}`);
+    }
+    showNotifyBanner('✅ GIF sent');
+    setTimeout(() => { if (currentServer) loadMessages(currentServer); }, 800);
+  } catch (err) {
+    console.warn('GIF attachment failed, falling back to URL text:', err);
+    // Fallback: send the URL as text (still renders inline thanks to URL regex)
+    messageInput.value = gifUrl;
+    sendMessage();
+  }
+}
 /* ---------- Auto-connect ---------- */
 (async function autoConnect() {
   const u = localStorage.getItem('bb_url');
